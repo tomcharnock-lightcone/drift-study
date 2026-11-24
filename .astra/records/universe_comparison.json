@@ -1,50 +1,50 @@
 {
   "address": "universe_comparison",
-  "content_hash": "sha256:bd7cf6ce8e58893883ffe976fed8ccc3f5e5cf3d435d311d8646d2fd7ae74c22",
+  "content_hash": "sha256:f4dcfa0f3613ead4c03c46190eecbb53332c4aeee139ff50ad67aa0c7a78557b",
   "generated_by": {
-    "commit": "96d01ab330fa90b8beee6372be81f858b0b5ab2a",
+    "commit": "6320f29d9807fc73aa25f06743044a2c699715ca",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T11:09:38.492Z",
+    "finished": "2026-11-24T15:59:59.957Z",
     "inputs": [
       {
-        "content_hash": "sha256:ebf660532c56f821cd2a682cd5d2e84c6a518d89688faafb61bc81682c8dfa70",
+        "content_hash": "sha256:f882d7f8026330a16cd196ecc5a71db20a9458d5b269b96b49d8a9038705c87c",
         "entry": "drift#baseline",
-        "size": 7317
-      },
-      {
-        "content_hash": "sha256:ca0d4cd402b66fd32acd30f2f0d3253fe69ea4e6660a017a09db1fe56356f54d",
-        "entry": "drift#temperature_term",
-        "size": 8165
-      },
-      {
-        "content_hash": "sha256:c011d1260653f10174d754169ee259a07ff1a063e9aa6d29824efde074db6fe0",
-        "entry": "drift#gap_filled_reference",
-        "size": 7282
-      },
-      {
-        "content_hash": "sha256:d5c055741354a08ce6cf13bef8f7f9a9d524af5f51e5b0bb02fb75ae01c04ac8",
-        "entry": "drift#coverage_90",
-        "size": 7324
-      },
-      {
-        "content_hash": "sha256:da280016e9eb257f5e18fd640132e956e69f8530ab0484e18712d3a8aefed189",
-        "entry": "drift#noise_model_errors",
         "size": 7320
       },
       {
-        "content_hash": "sha256:9b178519812770670bf9879267b657b3794e0fbce45efe2a55fb8d56bcb9a7d2",
+        "content_hash": "sha256:34717e67d99a856f82c8ed6e7956f6b428afdc6f972fbe9eaad19cf9ea85c3de",
+        "entry": "drift#temperature_term",
+        "size": 8153
+      },
+      {
+        "content_hash": "sha256:dcfca4aa36f919474a16518c20d7c4720e348dd42ade25dcbd4f79775bfdea6e",
+        "entry": "drift#gap_filled_reference",
+        "size": 7295
+      },
+      {
+        "content_hash": "sha256:024a8e4f9a2aa723659438a671470817f7466dd6cf6840ca607323b3dade9bef",
+        "entry": "drift#coverage_90",
+        "size": 7336
+      },
+      {
+        "content_hash": "sha256:abaf8d4d1450d89fc555ed3549dceb09c670c2b7468421ecc4b66b1cb5b2a80d",
+        "entry": "drift#noise_model_errors",
+        "size": 7330
+      },
+      {
+        "content_hash": "sha256:5fab6960a3aacffac174ae89d42de5c1ebc4afd93ffef6284de0da07e85c56ee",
         "entry": "drift#residual_errors",
-        "size": 7319
+        "size": 7324
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T11:09:37.871Z"
+    "started": "2026-11-24T15:59:59.277Z"
   },
-  "size": 1733,
+  "size": 1731,
   "spec_version": "0.1.0"
 }
