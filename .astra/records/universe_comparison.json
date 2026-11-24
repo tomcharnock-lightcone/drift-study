@@ -1,50 +1,45 @@
 {
   "address": "universe_comparison",
-  "content_hash": "sha256:f4dcfa0f3613ead4c03c46190eecbb53332c4aeee139ff50ad67aa0c7a78557b",
+  "content_hash": "sha256:9414278a3ebd35cb4b1dde15cc78b9bea37a23138cd61ac566ef1f00e55321da",
   "generated_by": {
-    "commit": "6320f29d9807fc73aa25f06743044a2c699715ca",
+    "commit": "9e2a85d9ce2f2b75b0307be80a64d0fb2dd26581",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T15:59:59.957Z",
+    "finished": "2026-11-24T16:09:17.962Z",
     "inputs": [
       {
-        "content_hash": "sha256:f882d7f8026330a16cd196ecc5a71db20a9458d5b269b96b49d8a9038705c87c",
+        "content_hash": "sha256:155d9d7f0f16d043df13045f2265895a06d926027e669278ec72d150c95b27a7",
         "entry": "drift#baseline",
-        "size": 7320
+        "size": 8765
       },
       {
-        "content_hash": "sha256:34717e67d99a856f82c8ed6e7956f6b428afdc6f972fbe9eaad19cf9ea85c3de",
-        "entry": "drift#temperature_term",
-        "size": 8153
-      },
-      {
-        "content_hash": "sha256:dcfca4aa36f919474a16518c20d7c4720e348dd42ade25dcbd4f79775bfdea6e",
+        "content_hash": "sha256:73e5a702103bf1144adafc3f4b86405fccd2cff8ab9cd740cd4b30154e899254",
         "entry": "drift#gap_filled_reference",
-        "size": 7295
+        "size": 8710
       },
       {
-        "content_hash": "sha256:024a8e4f9a2aa723659438a671470817f7466dd6cf6840ca607323b3dade9bef",
+        "content_hash": "sha256:a409d1c1add89871519f9648bfe419e445ec5eb86dcbfea876b1c445997b4705",
         "entry": "drift#coverage_90",
-        "size": 7336
+        "size": 8758
       },
       {
-        "content_hash": "sha256:abaf8d4d1450d89fc555ed3549dceb09c670c2b7468421ecc4b66b1cb5b2a80d",
+        "content_hash": "sha256:91acd8a08cc3fbb89a00d41d49ed0f456abe44c39c8deb997c8a464cf8b44fc5",
         "entry": "drift#noise_model_errors",
-        "size": 7330
+        "size": 8759
       },
       {
-        "content_hash": "sha256:5fab6960a3aacffac174ae89d42de5c1ebc4afd93ffef6284de0da07e85c56ee",
+        "content_hash": "sha256:95960bd67f1cdf2a54944f8109939829b563f362687a0c25292c5c83fe923a6f",
         "entry": "drift#residual_errors",
-        "size": 7324
+        "size": 8778
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T15:59:59.277Z"
+    "started": "2026-11-24T16:09:17.287Z"
   },
-  "size": 1731,
+  "size": 1404,
   "spec_version": "0.1.0"
 }
