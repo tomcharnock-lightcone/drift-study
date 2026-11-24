@@ -1,0 +1,35 @@
+{
+  "address": "calibration.coefficients#gain_three_months",
+  "content_hash": "sha256:f93a9e3c2e6f0f0b1aa471f27aed910768b4564d383df0369eadfb086f737d9d",
+  "generated_by": {
+    "commit": "af130be0aef32921d73c3267356192e3f904ebdc",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T12:54:59.115Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
+        "entry": "study.differences",
+        "size": 913390
+      },
+      {
+        "content_hash": "sha256:576589e6799d8b854ed16012e943f273d23a8412afc041ed8a91dac02e011fd7",
+        "entry": "study.reference_daily",
+        "size": 530739
+      },
+      {
+        "content_hash": "sha256:9b789bc81999e0693bc364f98008d5f13da4a10d412de191d88f3ad730257da8",
+        "entry": "noise.noise_models#hann",
+        "size": 6451
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T12:54:34.833Z"
+  },
+  "size": 14536,
+  "spec_version": "0.1.0"
+}
