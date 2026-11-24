@@ -140,11 +140,20 @@ than its square, so a few outlying days cannot pull the fit
 with least squares on clean data, resists outliers, and keeps its intervals'
 coverage). The noise model is propagated through the fit's final weights.
 
-| Universe | Battery swaps | Fit |
-|---|---|---|
-| `battery_steps` | a step at each | least squares |
-| `huber_fit` | no allowance | Huber |
-| `robust` | a step at each | Huber |
+A step has to be fitted with the sensor's gain taken out. A swap in March
+or September falls where a sensor with a gain has its difference changing
+fastest with the season; a step alone cannot follow that, and fits a jump
+that seems to settle over the following weeks instead. So the robust
+universe fits the steps together with the temperature term, and a second
+one takes the gain out by the January calibration instead, a gain fitted
+before every swap, which cannot trade off against the steps.
+
+| Universe | Battery swaps | Gain taken out by | Fit |
+|---|---|---|---|
+| `huber_fit` | no allowance | — | Huber |
+| `battery_steps` | a step at each | — | least squares |
+| `robust` | a step at each | temperature term | Huber |
+| `robust_january_gain` | a step at each | January calibration | Huber |
 
 Every other choice is the baseline's.
 
@@ -272,19 +281,32 @@ of its uncertainty (finding `screening_choices_immaterial`,
 ```{figure} results/robust_drift.png
 :label: fig-robust
 Each sensor's drift in the baseline and in the robust universe, with a step
-at each battery swap and Huber's fit. `results/robust/difference_series.png`
-shows the steps.
+at each battery swap, the temperature term and Huber's fit.
+`results/robust/difference_series.png` shows the steps.
+```
+
+```{figure} results/swap_residuals.png
+:label: fig-swaps
+The residuals of the step fits around each battery swap: with the gain left
+in (`battery_steps`), taken out by the temperature term (`robust`), and by
+the January calibration (`robust_january_gain`).
 ```
 
 **Three sensors had a battery swap**, and their differences step there
-(finding `battery_swaps_found`). **The steps matter for those three**
-([](#fig-robust), finding `battery_steps_matter`): with a step at its swap,
-`s20`, which had the largest drift of all, drifts no more than most, and
-`s02` and `s34` drift less. **Outliers do not matter** (finding
+(finding `battery_swaps_found`). **A step fits once the gain is out**
+([](#fig-swaps), finding `settling_is_the_gain`). With the gain left in,
+`s02`'s and `s34`'s residuals jump at the swap and drift back over weeks, as
+if the sensor were settling on its new battery; with the gain taken out,
+either way, they are level across the swap, and the steps come out much
+larger. **The steps matter for those three** ([](#fig-robust), finding
+`battery_steps_matter`): `s20`, which had the largest drift of all, drifts
+no more than many, and `s34` turns out to drift downward, its swap having
+stepped it up by more. **Outliers do not matter** (finding
 `outliers_immaterial`): the screening has already removed the bad days, and
 Huber's fit leaves every drift where it was. **The conclusion stands**
-(finding `robust_agrees`): with both, the sensors still drift upward as a
-group, and only the swapped sensors move.
+(finding `robust_agrees`): the robust universe still finds the sensors
+drifting upward as a group, by about what the temperature term alone gives,
+and the January calibration in its place agrees.
 
 ```{figure} results/calibration_gains.png
 :label: fig-gains
@@ -344,10 +366,10 @@ about a fifth. A month does nearly as well as three.
   sensors are.
 - **A straight line is not always the right shape.** The differences of
   `s02`, `s20` and `s34` step at their battery swaps, which the baseline
-  draws a slope through and the robust universe allows for. `s20`'s is a
-  clean step; `s02`'s and `s34`'s jump at the swap and settle back over some
-  weeks ([](#fig-series)), which one step fits only roughly. Other sensors'
-  differences follow the seasons, which the temperature term absorbs.
+  draws a slope through and the robust universe allows for. Other sensors'
+  differences follow the seasons, which the temperature term absorbs; for
+  the swapped sensors the two have to be fitted together
+  ([](#fig-swaps)).
 - **One year.** A linear drift and a seasonal effect are hard to separate
   within one annual cycle; the temperature term separates them only as far as
   its own assumptions hold. A second year of data would settle it.

@@ -67,3 +67,16 @@ def test_a_swap_outside_the_used_days_adds_no_step():
                              reference_mean_c=10.0, difference_c=np.linspace(0, 1, 60)))
     X, _, names = fit_drift.design(days, "time_only", ("2024-01-05",))
     assert names == ["offset", "drift"] and X.shape[1] == 2
+
+
+def test_a_drift_row_gives_back_its_fit():
+    rng = np.random.default_rng(8)
+    dates = pd.date_range("2023-01-01", "2023-12-31", freq="D")
+    ref = 10 + 8 * np.sin(np.arange(len(dates)) / 58.0)
+    days = pd.DataFrame(dict(date=dates.strftime("%Y-%m-%d"), reference_mean_c=ref,
+                             difference_c=0.02 * ref + 0.5 * (dates >= "2023-09-15")
+                             + rng.normal(0, 0.1, len(ref))))
+    r = fit_drift.fit_sensor(days, "time_and_temperature", steps=("2023-09-15",))
+    row = pd.Series({k: v for k, v in r.items() if not k.startswith("_")} | fit_drift.step_columns(r))
+    e = days["difference_c"].to_numpy() - fit_drift.fitted(days, row)
+    assert e == pytest.approx(r["_residuals"], abs=1e-3)

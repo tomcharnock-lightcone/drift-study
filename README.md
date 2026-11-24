@@ -14,8 +14,10 @@ network.
   two weeks, one month and three months; what that changes,
   `results/calibration_comparison.json`. The calibration is an analysis of
   its own, in [`calibration/`](calibration/README.md), which this one drives.
-- The same with a free step at each battery swap and a fit robust to
-  outlying days, `results/robust/drift.csv`; what that changes,
+- The same with a free step at each battery swap, the sensors' gains taken
+  out by the temperature term, and a fit robust to outlying days,
+  `results/robust/drift.csv` (`results/robust_january_gain/drift.csv` with
+  the January gain calibration instead); what that changes,
   `results/robust_comparison.json`.
 - Method, checks and caveats: [`index.md`](index.md). Specification:
   `astra.yaml`.

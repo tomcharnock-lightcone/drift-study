@@ -199,6 +199,22 @@ def step_columns(row: dict) -> dict:
     }
 
 
+def fitted(days: pd.DataFrame, row: pd.Series) -> np.ndarray:
+    """The fit a row of a drift table describes, at each of the days it was
+    fitted to (`days`, the sensor's used days): offset, drift, temperature
+    term and battery steps, as the table gives them."""
+    date = pd.to_datetime(days["date"])
+    t = ((date - MID_YEAR).dt.days / DAYS_PER_YEAR).to_numpy()
+    y = row["offset_c"] + row["drift_c_per_year"] * t
+    if pd.notna(row["temp_coef_c_per_c"]):
+        ref = days["reference_mean_c"].to_numpy()
+        y = y + row["temp_coef_c_per_c"] * (ref - ref.mean())
+    if isinstance(row.get("battery_step_dates"), str):
+        for d, c in zip(row["battery_step_dates"].split(";"), str(row["battery_steps_c"]).split(";")):
+            y = y + float(c) * (date >= pd.Timestamp(d)).to_numpy()
+    return y
+
+
 def main(differences: str, model: str, errors: str, noise_models: str, fit_method: str,
          swap_steps: str, battery_swaps: str, out: str) -> None:
     if model not in MODELS:
