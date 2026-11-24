@@ -245,3 +245,69 @@ universes:
     derived_from: baseline
     decisions:
       min_coverage: p90
+
+findings:
+  sensors_drift_upward:
+    claim: >-
+      Against FRPDAS, the sensors drifted upward over 2023 as a group: their
+      median drift is +0.42 °C per year (drift linear in time), and 34 of the
+      40 sensors have a 95% interval that excludes zero.
+    evidence:
+      - artifact: universe_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.4159' }
+      - artifact: universe_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 34' }
+
+  reference_stable:
+    claim: >-
+      FRPDAS shows no significant drift against the median of Freiburg's
+      other stations over 2023: +0.11 °C per year, 95% interval −0.09 to
+      +0.31. The sensors' drifts are not the reference's.
+    evidence:
+      - artifact: reference_check
+        quote: { exact: '"drift_c_per_year": 0.1058' }
+      - artifact: reference_check
+        quote: { exact: '"drift_ci95_low_c_per_year": -0.0943' }
+
+  siting_floor:
+    claim: >-
+      Maintained Freiburg stations show apparent linear drifts against FRPDAS
+      over 2023 from −0.43 to +0.43 °C per year (5th–95th percentile), from
+      their sites alone. A sensor's drift inside that range cannot be told
+      apart from where it stands, unless it is co-located with FRPDAS.
+    evidence:
+      - artifact: reference_check
+        quote: { exact: '"drift_p05_c_per_year": -0.4279' }
+      - artifact: reference_check
+        quote: { exact: '"drift_p95_c_per_year": 0.4347' }
+
+  temperature_term_matters:
+    claim: >-
+      Allowing a temperature-dependent bias moves the sensors' drifts by a
+      median of 0.11 °C per year and by up to 0.37 °C per year (s22), and
+      lowers the median drift to +0.34 °C per year: for the sensors whose
+      difference follows the seasons, how drift is separated from a
+      temperature dependence matters as much as the drift's uncertainty.
+    evidence:
+      - artifact: universe_comparison
+        quote: { exact: '"median_abs_drift_change_c_per_year": 0.1099' }
+      - artifact: universe_comparison
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.3706' }
+      - artifact: universe_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.3357' }
+      - artifact: universe_comparison
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 1.626' }
+
+  screening_choices_immaterial:
+    claim: >-
+      Counting FRPDAS's gap-filled days, or lowering the sensor-day coverage
+      threshold to 90%, changes no sensor's drift by more than 0.02 °C per
+      year, at most a third of its standard error. Either choice can be
+      made.
+    evidence:
+      - artifact: universe_comparison
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0196' }
+      - artifact: universe_comparison
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0121' }
+      - artifact: universe_comparison
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.337' }

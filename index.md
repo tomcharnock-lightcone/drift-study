@@ -122,6 +122,35 @@ Every sensor's daily difference from FRPDAS (dots), the days excluded
 Each sensor's drift with and without the temperature term.
 ```
 
+**The sensors drift upward as a group** ([](#fig-drift)): most of them by
+more than their uncertainty, a few downward, and a handful not measurably at
+all (finding `sensors_drift_upward`; every sensor's numbers are in
+`results/baseline/drift.csv`). **The reference is not the cause:** FRPDAS
+shows no significant drift against the rest of the Freiburg network (finding
+`reference_stable`).
+
+**How much of that is the sensors?** Freiburg's own maintained stations,
+compared with FRPDAS over the same year, show apparent drifts from their
+siting alone (the grey band in [](#fig-drift), finding `siting_floor`). The
+sensors well outside that band have drifted, wherever they stand; those
+inside it may simply stand somewhere that answers the year's weather
+differently from FRPDAS.
+
+**The temperature term matters for some sensors**
+([](#fig-models), finding `temperature_term_matters`). Where a sensor's
+difference follows the seasons, rising in summer or falling, as for `s06`,
+`s07`, `s15` and `s22` or `s21`, `s28` and `s33` ([](#fig-series)), the term
+absorbs that cycle: its residuals shrink, its interval narrows, and its
+drift moves by as much as the time-only fit's own uncertainty. Where the difference is a clean ramp, as
+for `s09`, `s16`, `s29` or `s30`, both models agree. Which drift to quote for a
+seasonal sensor depends on whether its temperature dependence is believed to
+be steady; with one year of data the analysis cannot say.
+
+**The screening choices do not matter.** Counting the reference's gap-filled
+days or lowering the coverage threshold leaves every drift within a fraction
+of its uncertainty (finding `screening_choices_immaterial`,
+`results/universe_comparison.json`).
+
 ## Caveats
 
 - **A drift against one station is not the sensor's alone.** It includes how
