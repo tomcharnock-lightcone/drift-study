@@ -1,0 +1,247 @@
+# ASTRA Analysis Specification
+
+spec_version: "0.1.0"
+label: "drift-study"
+description: >-
+  How far each of the city's 40 low-cost temperature sensors (s01 to s40)
+  drifted over 2023. Each sensor's despiked daily mean, from sensor-archive,
+  is compared with the daily mean air temperature of FRPDAS, a station of
+  Freiburg's street-level weather network (Plein, Christen & Dormann,
+  doi:10.5281/zenodo.21307957), and a linear drift is fitted per sensor to the
+  daily difference. The station file is streamed from Zenodo and checked
+  against its published MD5; only the daily means it gives are kept. Whether
+  FRPDAS itself is stable, and how much apparent drift two maintained stations
+  show against each other over one year, is checked against the rest of the
+  Freiburg network.
+
+analyses:
+  archive:
+    url: https://github.com/tomcharnock-lightcone/sensor-archive
+    commit: aaeeaae5fbb0e15e3a1954ed831f01542916f145
+
+decisions:
+  reference_hours:
+    label: Reference hours
+    rationale: >-
+      The Freiburg file is gap-filled: an hour the station did not record is
+      replaced by a model prediction and marked `type = predicted`. In 2023,
+      13 of FRPDAS's 365 days hold at least one predicted hour, one of them
+      all 24. A predicted hour is a model of the station, not a measurement,
+      so comparing a sensor with it can pass the model's error to the sensor;
+      leaving those days out costs 13 days a sensor.
+    options:
+      measured:
+        label: Measured days only
+        description: >-
+          Only days whose 24 hourly values at FRPDAS are all measured.
+      gap_filled:
+        label: Gap-filled days too
+        description: >-
+          Every day, with the gap-filled hours as published.
+
+  min_coverage:
+    label: Sensor-day coverage
+    rationale: >-
+      A sensor-day missing part of its readings has a mean biased by
+      whichever part of the daily cycle is missing, while the reference's
+      mean covers the whole day; partial days in the 2023 summaries depart
+      from their sensor's usual difference by up to several °C. A day counts
+      as covered by the share of its 8640 ten-second readings delivered,
+      readings despiking removed included (they are isolated single readings
+      and leave no hole). Fewer than 1% of sensor-days fall below 99%, so the
+      threshold mostly decides a few dozen days.
+    options:
+      p99:
+        label: At least 99% of the day
+      p90:
+        label: At least 90% of the day
+      any:
+        label: Every day with readings
+        excluded: >-
+          Days with a small fraction of their readings give means several °C
+          away from the day's true mean; they would enter the fit as outliers
+          of known cause.
+
+  drift_model:
+    label: Drift model
+    rationale: >-
+      A drift is a change in a sensor's difference from the reference over
+      time. But a sensor whose bias depends on temperature (a gain error, or
+      radiative heating that grows on warm, sunny days) shows a seasonal cycle
+      in its difference that is not drift; 2023 is not symmetric about
+      mid-year, so part of that cycle projects onto a linear trend. Adding the
+      reference temperature as a regressor separates the two, at the cost of
+      a model that assumes the temperature dependence is linear and constant
+      over the year.
+    options:
+      time_only:
+        label: Linear in time
+        description: >-
+          d = a + b·t: the linear drift asked for, nothing else.
+      time_and_temperature:
+        label: Linear in time and in reference temperature
+        description: >-
+          d = a + b·t + c·(T_ref − T̄_ref): a linear drift plus a bias
+          proportional to the reference temperature.
+
+outputs:
+  reference_daily:
+    label: Freiburg stations' daily means, 2023
+    type: table
+    format: csv
+    description: >-
+      Daily mean air temperature (ta) of every station of the Freiburg
+      street-level network for each UTC day of 2023, from the hourly file
+      ta_vp_rh_60_min_2022_09_01_2024_08_31_gap_filled.csv of
+      doi:10.5281/zenodo.21307957 (CC BY 4.0). The file is streamed whole and
+      checked against its published MD5 (093ef1695526841b2ea5e66d800ca42e),
+      and is not kept. Columns: date, station, ta_mean_c (mean of the day's
+      hourly values, measured and gap-filled alike), n_hours, n_measured.
+      Hourly timestamps are UTC and are assigned to the day they fall in.
+    recipe:
+      command: >-
+        python src/reference_daily.py
+        https://zenodo.org/api/records/21307957/files/ta_vp_rh_60_min_2022_09_01_2024_08_31_gap_filled.csv/content
+        093ef1695526841b2ea5e66d800ca42e 2023 {output}
+
+  differences:
+    label: Sensor minus reference, per day
+    type: table
+    format: csv
+    description: >-
+      One row per sensor-day of the archive's despiked daily summary: date,
+      sensor, sensor_mean_c, reference_mean_c (FRPDAS), difference_c,
+      coverage (share of the day's 8640 readings delivered),
+      reference_measured_hours, used, and excluded_reason for a day not used,
+      by precedence: flatline (every reading the same value, a stuck sensor),
+      flatline_adjacent (the day before or after one, which the summary
+      cannot tell how much of was stuck), low_coverage, no_reference,
+      reference_gap_filled.
+    inputs: [archive.daily_summary#despiked, reference_daily]
+    decisions: [reference_hours, min_coverage]
+    recipe:
+      command: >-
+        python src/differences.py {inputs.archive.daily_summary#despiked}
+        {inputs.reference_daily} FRPDAS {decisions.reference_hours}
+        {decisions.min_coverage} {output}
+
+  drift:
+    label: Linear drift per sensor
+    type: table
+    format: csv
+    description: >-
+      One row per sensor, fitted by least squares to its used days:
+      drift_c_per_year (b, per 365.25 days) with drift_se_c_per_year and its
+      95% interval (drift_ci95_low/high_c_per_year); offset_c (a, the
+      difference at 2023-07-02) with offset_se_c; temp_coef_c_per_c and its
+      error (c, under the temperature model only); residual_sd_c,
+      residual_lag1_autocorr and n_effective; drift_ols_se_c_per_year, the
+      unadjusted error, for comparison; n_days_used and the days excluded
+      for each reason. Uncertainties allow for autocorrelated residuals by
+      the effective sample size of an AR(1) process, n_e = n(1 − r₁)/(1 + r₁)
+      (Santer et al. 2000, doi:10.1029/1999JD901105), with Student-t
+      intervals on n_e − k degrees of freedom. Newey–West errors were tried
+      and rejected: on simulated AR(1) residuals as persistent as these,
+      their 95% intervals covered the true trend 80–90% of the time
+      (tests/test_drift_stats.py).
+    inputs: [differences]
+    decisions: [drift_model]
+    recipe:
+      command: python src/fit_drift.py {inputs.differences} {decisions.drift_model} {output}
+
+  reference_check:
+    label: Is the reference stable?
+    type: metric
+    format: json
+    description: >-
+      On days whose 24 hours are all measured: FRPDAS minus the median of the
+      other Freiburg stations, fitted for drift (reference_vs_network); and
+      each other station with at least 300 such days minus FRPDAS, fitted the
+      same way (stations_vs_reference), summarised by the median, standard
+      deviation and 5th–95th percentiles of their drifts and the fraction
+      whose 95% interval excludes zero. Those stations are maintained, so
+      their apparent drifts are what two sites' different responses to one
+      year's weather put into a linear fit. Both drift models, side by side.
+    inputs: [reference_daily]
+    recipe:
+      command: python src/reference_check.py {inputs.reference_daily} FRPDAS {output}
+
+  difference_series:
+    label: Daily differences and fitted drifts
+    type: figure
+    format: png
+    description: >-
+      One panel per sensor: the daily difference from FRPDAS (used days as
+      dots, excluded days as rings) and the fitted drift.
+    inputs: [differences, drift]
+    recipe:
+      command: python src/plot_differences.py {inputs.differences} {inputs.drift} {output}
+
+  drift_summary:
+    label: Drift per sensor
+    type: figure
+    format: png
+    description: >-
+      Each sensor's drift with its 95% interval, sorted, over the 5th–95th
+      percentile band of the Freiburg stations' apparent drifts against
+      FRPDAS under the same model.
+    inputs: [drift, reference_check]
+    decisions: [drift_model]
+    recipe:
+      command: >-
+        python src/plot_drift.py {inputs.drift} {inputs.reference_check}
+        {decisions.drift_model} {output}
+
+  model_comparison:
+    label: Drift with and without the temperature term
+    type: figure
+    format: png
+    description: >-
+      Each sensor's drift and 95% interval under both drift models, side by
+      side.
+    inputs: [drift#baseline, drift#temperature_term]
+    recipe:
+      command: >-
+        python src/plot_model_comparison.py {inputs.drift#baseline}
+        {inputs.drift#temperature_term} {output}
+
+  universe_comparison:
+    label: What each alternative changes
+    type: metric
+    format: json
+    description: >-
+      For each alternative universe against the baseline: the largest and
+      median change in drift over the sensors, the sensor that moves most,
+      the largest change in units of the baseline's standard error, the
+      median drift, and how many sensors' 95% intervals exclude zero.
+    inputs: [drift#baseline, drift#temperature_term, drift#gap_filled_reference, drift#coverage_90]
+    recipe:
+      command: >-
+        python src/compare_universes.py {inputs.drift#baseline}
+        temperature_term={inputs.drift#temperature_term}
+        gap_filled_reference={inputs.drift#gap_filled_reference}
+        coverage_90={inputs.drift#coverage_90} {output}
+
+universes:
+  baseline:
+    label: Baseline
+    description: Measured reference days, sensor-days at least 99% covered, drift linear in time.
+    decisions:
+      reference_hours: measured
+      min_coverage: p99
+      drift_model: time_only
+  temperature_term:
+    label: With a temperature-dependent bias
+    derived_from: baseline
+    decisions:
+      drift_model: time_and_temperature
+  gap_filled_reference:
+    label: Gap-filled reference days included
+    derived_from: baseline
+    decisions:
+      reference_hours: gap_filled
+  coverage_90:
+    label: Sensor-days at least 90% covered
+    derived_from: baseline
+    decisions:
+      min_coverage: p90
