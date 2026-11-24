@@ -1,25 +1,30 @@
 {
   "address": "drift#temperature_term",
-  "content_hash": "sha256:98ce5b2bdd8b6dac61a650b6368715c0df9c134f02d46612e0f4fe5860cbc448",
+  "content_hash": "sha256:e393e5e95de13b14af99f2f83f611995dcf6291145da71a17cf23ffef4876943",
   "generated_by": {
-    "commit": "5aafb4b64f724ff6f3fbbee6bf08e870cdc0b627",
+    "commit": "9ffb0e563d601167ff68a8063c0b8653490ab01d",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T10:09:36.202Z",
+    "finished": "2026-11-24T11:07:32.562Z",
     "inputs": [
       {
         "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
         "entry": "differences",
         "size": 913390
+      },
+      {
+        "content_hash": "sha256:9b789bc81999e0693bc364f98008d5f13da4a10d412de191d88f3ad730257da8",
+        "entry": "noise.noise_models#hann",
+        "size": 6451
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T10:09:34.625Z"
+    "started": "2026-11-24T11:06:11.894Z"
   },
-  "size": 6588,
+  "size": 8182,
   "spec_version": "0.1.0"
 }
