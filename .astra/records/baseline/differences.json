@@ -2,11 +2,11 @@
   "address": "differences#baseline",
   "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
   "generated_by": {
-    "commit": "5aafb4b64f724ff6f3fbbee6bf08e870cdc0b627",
+    "commit": "2e6d2ed38932fa69afb676bd7f5f65faf2d6bcdd",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T10:09:34.509Z",
+    "finished": "2026-11-24T14:30:53.457Z",
     "inputs": [
       {
         "content_hash": "sha256:07a5abeea41c44194a7def429e423cb844ddaaf2d7b9a3e821eb3a56d3ec0f6e",
@@ -17,13 +17,18 @@
         "content_hash": "sha256:576589e6799d8b854ed16012e943f273d23a8412afc041ed8a91dac02e011fd7",
         "entry": "reference_daily",
         "size": 530739
+      },
+      {
+        "content_hash": "sha256:d79cbb23f1fb66e9c8936cafca928feb68e123990dd7b5855f663fc8a55a20d6",
+        "entry": "battery_swaps",
+        "size": 182
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T10:09:33.707Z"
+    "started": "2026-11-24T14:30:52.367Z"
   },
   "size": 913390,
   "spec_version": "0.1.0"
