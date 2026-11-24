@@ -102,18 +102,19 @@ Since neither error is complete, every `drift.csv` carries both
 (`drift_se_residual_c_per_year`, `drift_se_noise_model_c_per_year`), and the
 decision `drift_errors` picks the one the quoted error and interval use: the
 residuals', the noise model's, or both variances added (`combined`, which
-counts the sensor's day-to-day noise twice and so errs wide).
+counts the sensor's day-to-day noise twice and so errs wide). The baseline
+adds them; each alone is built for comparison.
 
 **Decisions, each built in its own universe:**
 
 | Universe | Reference days | Sensor-day coverage | Drift model | Drift errors |
 |---|---|---|---|---|
-| `baseline` | measured only | ≥ 99% | linear in time | residuals |
-| `temperature_term` | measured only | ≥ 99% | + temperature-dependent bias | residuals |
-| `gap_filled_reference` | gap-filled too | ≥ 99% | linear in time | residuals |
-| `coverage_90` | measured only | ≥ 90% | linear in time | residuals |
+| `baseline` | measured only | ≥ 99% | linear in time | both added |
+| `temperature_term` | measured only | ≥ 99% | + temperature-dependent bias | both added |
+| `gap_filled_reference` | gap-filled too | ≥ 99% | linear in time | both added |
+| `coverage_90` | measured only | ≥ 90% | linear in time | both added |
+| `residual_errors` | measured only | ≥ 99% | linear in time | residuals |
 | `noise_model_errors` | measured only | ≥ 99% | linear in time | noise model |
-| `combined_errors` | measured only | ≥ 99% | linear in time | both added |
 
 The temperature term is there because a sensor whose bias depends on
 temperature (a gain error, or a radiation shield that lets warm, sunny days
@@ -134,8 +135,8 @@ different sites answering the same weather differently.
 
 ```{figure} results/baseline/drift_summary.png
 :label: fig-drift
-Each sensor's drift against FRPDAS with its 95% interval (baseline). The
-grey band is the 5th–95th percentile of the apparent drifts of Freiburg's
+Each sensor's drift against FRPDAS with its 95% interval (baseline: the
+residuals' and the noise models' errors added). The grey band is the 5th–95th percentile of the apparent drifts of Freiburg's
 other stations against FRPDAS over the same year.
 `results/temperature_term/drift_summary.png` is the same with the
 temperature term.
@@ -152,12 +153,31 @@ Every sensor's daily difference from FRPDAS (dots), the days excluded
 Each sensor's drift with and without the temperature term.
 ```
 
-**The sensors drift upward as a group** ([](#fig-drift)): most of them by
-more than their uncertainty, a few downward, and a handful not measurably at
+```{figure} results/error_comparison.png
+:label: fig-errors
+Each sensor's drift error from its residuals and from its noise model. The
+baseline's error is the two added in quadrature.
+```
+
+**The sensors drift upward as a group** ([](#fig-drift)): more than half of
+them by more than their uncertainty, a few downward, and a handful not measurably at
 all (finding `sensors_drift_upward`; every sensor's numbers are in
 `results/baseline/drift.csv`). **The reference is not the cause:** FRPDAS
 shows no significant drift against the rest of the Freiburg network (finding
 `reference_stable`).
+
+**Where the uncertainty comes from** ([](#fig-errors), finding
+`both_error_sources_matter`). For some sensors the residuals' scatter
+dominates: their differences carry the sites' different response to the
+weather, which the sensor's own noise cannot explain (`s22`, `s21`, `s07`,
+`s15`). For others the sensor's slow 1/f wander, as its chamber model
+extends it over a year, outweighs what the residuals show (`s13`, `s30`,
+`s32`, `s24`), and an AR(1) model of the residuals would have made their
+drift look far more certain than it is. At the scale of a day the sensor's
+own noise accounts for a minority of the scatter for most sensors
+(`noise_day_step_sd_c` against `observed_day_step_sd_c` in `drift.csv`),
+and never more than all of it, a check that the noise models hold outside
+the chamber at least that far.
 
 **How much of that is the sensors?** Freiburg's own maintained stations,
 compared with FRPDAS over the same year, show apparent drifts from their
@@ -171,8 +191,9 @@ differently from FRPDAS.
 difference follows the seasons, rising in summer or falling, as for `s06`,
 `s07`, `s15` and `s22` or `s21`, `s28` and `s33` ([](#fig-series)), the term
 absorbs that cycle: its residuals shrink, its interval narrows, and its
-drift moves by as much as the time-only fit's own uncertainty. Where the difference is a clean ramp, as
-for `s09`, `s16`, `s29` or `s30`, both models agree. Which drift to quote for a
+drift moves by up to about the time-only fit's own uncertainty. Where the
+difference is a clean ramp, as for `s09`, `s16`, `s29` or `s30`, both models
+agree. Which drift to quote for a
 seasonal sensor depends on whether its temperature dependence is believed to
 be steady; with one year of data the analysis cannot say.
 
@@ -198,7 +219,10 @@ of its uncertainty (finding `screening_choices_immaterial`,
 - **One year.** A linear drift and a seasonal effect are hard to separate
   within one annual cycle; the temperature term separates them only as far as
   its own assumptions hold. A second year of data would settle it.
-- **The uncertainties assume AR(1) residuals.** Where the residuals carry
-  slower structure (a seasonal shape the model misses), the intervals are
-  too narrow; the spread of the stations' apparent drifts is the more
-  conservative yardstick.
+- **Each half of the uncertainty rests on an assumption.** The residuals'
+  part assumes AR(1) residuals, and is too narrow where they carry slower
+  structure (a seasonal shape the model misses). The noise models' part
+  extends a week-long chamber run at about 20 °C to a year and to the
+  field's temperatures, which noise-models itself does not vouch for. The
+  spread of the stations' apparent drifts is the most conservative
+  yardstick.

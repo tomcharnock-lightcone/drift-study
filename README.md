@@ -6,7 +6,8 @@ network.
 
 - Drift per sensor, with 95% intervals: `results/baseline/drift.csv`
   (linear in time) and `results/temperature_term/drift.csv` (linear in time
-  plus a temperature-dependent bias).
+  plus a temperature-dependent bias). The intervals add the scatter of each
+  sensor's residuals to what its own noise model gives.
 - Method, checks and caveats: [`index.md`](index.md). Specification:
   `astra.yaml`.
 
@@ -15,6 +16,9 @@ Inputs:
 - The sensors' despiked daily summaries, read from
   [sensor-archive](https://github.com/tomcharnock-lightcone/sensor-archive)
   at a fixed commit (`analyses.archive` in `astra.yaml`).
+- The sensors' noise models from
+  [noise-models](https://github.com/tomcharnock-lightcone/noise-models)
+  (`analyses.noise`), likewise at a fixed commit.
 - Hourly air temperature of the Freiburg network, Plein, Christen & Dormann,
   *Street-level weather station network in Freiburg, Germany* (L2, 1.0.0),
   [doi:10.5281/zenodo.21307957](https://doi.org/10.5281/zenodo.21307957),

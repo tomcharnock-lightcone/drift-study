@@ -329,13 +329,14 @@ findings:
   sensors_drift_upward:
     claim: >-
       Against FRPDAS, the sensors drifted upward over 2023 as a group: their
-      median drift is +0.42 °C per year (drift linear in time), and 34 of the
-      40 sensors have a 95% interval that excludes zero.
+      median drift is +0.42 °C per year (drift linear in time), and 24 of the
+      40 sensors have a 95% interval that excludes zero, with the residuals'
+      and the noise models' errors added.
     evidence:
       - artifact: universe_comparison
         quote: { exact: '"median_drift_c_per_year": 0.4159' }
       - artifact: universe_comparison
-        quote: { exact: '"n_sensors_ci95_excluding_zero": 34' }
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 24' }
 
   reference_stable:
     claim: >-
@@ -366,7 +367,8 @@ findings:
       median of 0.11 °C per year and by up to 0.37 °C per year (s22), and
       lowers the median drift to +0.34 °C per year: for the sensors whose
       difference follows the seasons, how drift is separated from a
-      temperature dependence matters as much as the drift's uncertainty.
+      temperature dependence matters about as much as the drift's
+      uncertainty, up to 1.1 of its standard error.
     evidence:
       - artifact: universe_comparison
         quote: { exact: '"median_abs_drift_change_c_per_year": 0.1099' }
@@ -375,13 +377,13 @@ findings:
       - artifact: universe_comparison
         quote: { exact: '"median_drift_c_per_year": 0.3357' }
       - artifact: universe_comparison
-        quote: { exact: '"max_abs_drift_change_in_baseline_se": 1.626' }
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 1.116' }
 
   screening_choices_immaterial:
     claim: >-
       Counting FRPDAS's gap-filled days, or lowering the sensor-day coverage
       threshold to 90%, changes no sensor's drift by more than 0.02 °C per
-      year, at most a third of its standard error. Either choice can be
+      year, at most a tenth of its standard error. Either choice can be
       made.
     evidence:
       - artifact: universe_comparison
@@ -389,4 +391,21 @@ findings:
       - artifact: universe_comparison
         quote: { exact: '"max_abs_drift_change_c_per_year": 0.0121' }
       - artifact: universe_comparison
-        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.337' }
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.104' }
+
+  both_error_sources_matter:
+    claim: >-
+      Neither the residuals nor the sensors' noise models alone account for
+      the drift's uncertainty. Taken alone, the residual errors are a median
+      0.55 of the combined ones and the noise-model errors 0.83, and with
+      either alone more sensors' drifts would pass for significant: 34 or 30
+      of 40, against 24 with both.
+    evidence:
+      - artifact: universe_comparison
+        quote: { exact: '"median_se_ratio_to_baseline": 0.553' }
+      - artifact: universe_comparison
+        quote: { exact: '"median_se_ratio_to_baseline": 0.833' }
+      - artifact: universe_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 34' }
+      - artifact: universe_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 30' }
