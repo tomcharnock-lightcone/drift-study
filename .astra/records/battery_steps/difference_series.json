@@ -1,0 +1,30 @@
+{
+  "address": "difference_series#battery_steps",
+  "content_hash": "sha256:6e47338bc32ef0114b485d480287d6037346257324caba3fc3049410294c06ea",
+  "generated_by": {
+    "commit": "2e6d2ed38932fa69afb676bd7f5f65faf2d6bcdd",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T14:32:34.439Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:9ff2ac42889223919ee101586e063404c537df6e51e0d32a1ae11f492993654d",
+        "entry": "fit_input",
+        "size": 913429
+      },
+      {
+        "content_hash": "sha256:ee8f83cdb009e838736ba7b2acd45e369fe3ab66b7816c86288e06e9d240023f",
+        "entry": "drift",
+        "size": 7761
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T14:32:26.329Z"
+  },
+  "size": 912131,
+  "spec_version": "0.1.0"
+}
