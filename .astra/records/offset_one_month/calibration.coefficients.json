@@ -2,11 +2,11 @@
   "address": "calibration.coefficients#offset_one_month",
   "content_hash": "sha256:432fedd7050fc476568357f045443d5ae80e0d0272138f015334f9c418b26a15",
   "generated_by": {
-    "commit": "af130be0aef32921d73c3267356192e3f904ebdc",
+    "commit": "51614ebe1afd68ed1090ddb0ad261e78dc2870e2",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T12:54:36.619Z",
+    "finished": "2026-11-24T15:55:33.636Z",
     "inputs": [
       {
         "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
@@ -19,16 +19,16 @@
         "size": 530739
       },
       {
-        "content_hash": "sha256:9b789bc81999e0693bc364f98008d5f13da4a10d412de191d88f3ad730257da8",
+        "content_hash": "sha256:a006edd1294b4f1f77c88fafbc1cb26388da950dd77b22dce9c97bb4d14a8054",
         "entry": "noise.noise_models#hann",
-        "size": 6451
+        "size": 6703
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T12:54:34.828Z"
+    "started": "2026-11-24T15:55:31.863Z"
   },
   "size": 10864,
   "spec_version": "0.1.0"
