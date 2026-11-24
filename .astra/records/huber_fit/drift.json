@@ -1,0 +1,35 @@
+{
+  "address": "drift#huber_fit",
+  "content_hash": "sha256:bebc4a53c7edc2216d37497d02358680d815f3ab4453b39d5a6552b50d43c70a",
+  "generated_by": {
+    "commit": "2e6d2ed38932fa69afb676bd7f5f65faf2d6bcdd",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T14:32:24.607Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
+        "entry": "fit_input",
+        "size": 913390
+      },
+      {
+        "content_hash": "sha256:9b789bc81999e0693bc364f98008d5f13da4a10d412de191d88f3ad730257da8",
+        "entry": "noise.noise_models#hann",
+        "size": 6451
+      },
+      {
+        "content_hash": "sha256:d79cbb23f1fb66e9c8936cafca928feb68e123990dd7b5855f663fc8a55a20d6",
+        "entry": "battery_swaps",
+        "size": 182
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T14:30:54.123Z"
+  },
+  "size": 7464,
+  "spec_version": "0.1.0"
+}
