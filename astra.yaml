@@ -562,7 +562,7 @@ outputs:
       command: >-
         python src/plot_model_comparison.py {inputs.drift#baseline}
         {inputs.drift#robust} {output} baseline robust
-        "How battery steps and a robust fit move the drift"
+        "How battery steps, the temperature term and a robust fit move the drift"
 
 universes:
   baseline:
