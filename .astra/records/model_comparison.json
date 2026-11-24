@@ -2,28 +2,28 @@
   "address": "model_comparison",
   "content_hash": "sha256:6bb143633190318cbf22b0f20ab37534c242cec2d37a2bb71cf2046303b8f13a",
   "generated_by": {
-    "commit": "5aafb4b64f724ff6f3fbbee6bf08e870cdc0b627",
+    "commit": "9ffb0e563d601167ff68a8063c0b8653490ab01d",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T10:09:38.262Z",
+    "finished": "2026-11-24T11:07:34.470Z",
     "inputs": [
       {
-        "content_hash": "sha256:816a31cef788b16d4d5979a27dda61f399c9c36e2a8c7b2dd40f055fdb06e054",
+        "content_hash": "sha256:9b178519812770670bf9879267b657b3794e0fbce45efe2a55fb8d56bcb9a7d2",
         "entry": "drift#baseline",
-        "size": 5748
+        "size": 7319
       },
       {
-        "content_hash": "sha256:98ce5b2bdd8b6dac61a650b6368715c0df9c134f02d46612e0f4fe5860cbc448",
+        "content_hash": "sha256:e393e5e95de13b14af99f2f83f611995dcf6291145da71a17cf23ffef4876943",
         "entry": "drift#temperature_term",
-        "size": 6588
+        "size": 8182
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T10:09:36.400Z"
+    "started": "2026-11-24T11:07:32.658Z"
   },
   "size": 94203,
   "spec_version": "0.1.0"
