@@ -1,0 +1,25 @@
+{
+  "address": "battery_swaps",
+  "content_hash": "sha256:d79cbb23f1fb66e9c8936cafca928feb68e123990dd7b5855f663fc8a55a20d6",
+  "generated_by": {
+    "commit": "2e6d2ed38932fa69afb676bd7f5f65faf2d6bcdd",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T14:30:51.768Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:d5a54e3efd336aea6c8a779eb025692d7d1f5ec7b082b25521b136e70c36e391",
+        "entry": "archive.daily_battery",
+        "size": 1079202
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T14:30:51.276Z"
+  },
+  "size": 182,
+  "spec_version": "0.1.0"
+}
