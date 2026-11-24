@@ -1,0 +1,95 @@
+{
+  "address": "robust_comparison",
+  "content_hash": "sha256:714d86aaf215cb700879b4a57296d0ba713a8e0611a5e163aa195c63a81fa75b",
+  "generated_by": {
+    "commit": "2e6d2ed38932fa69afb676bd7f5f65faf2d6bcdd",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T14:32:38.423Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:d79cbb23f1fb66e9c8936cafca928feb68e123990dd7b5855f663fc8a55a20d6",
+        "entry": "battery_swaps",
+        "size": 182
+      },
+      {
+        "content_hash": "sha256:ebf660532c56f821cd2a682cd5d2e84c6a518d89688faafb61bc81682c8dfa70",
+        "entry": "drift#baseline",
+        "size": 7317
+      },
+      {
+        "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
+        "entry": "fit_input#baseline",
+        "size": 913390
+      },
+      {
+        "content_hash": "sha256:ca0d4cd402b66fd32acd30f2f0d3253fe69ea4e6660a017a09db1fe56356f54d",
+        "entry": "drift#temperature_term",
+        "size": 8165
+      },
+      {
+        "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
+        "entry": "fit_input#temperature_term",
+        "size": 913390
+      },
+      {
+        "content_hash": "sha256:dd342cb2c7520904fa7c49df4fa3f4f172db5250510d92c1f74cb9ce7ab4c4b2",
+        "entry": "drift#gain_one_month",
+        "size": 8495
+      },
+      {
+        "content_hash": "sha256:63c440216cc03d43fafb93d9cba55043aaee541ccbe3c34fb36a1cef43dda59a",
+        "entry": "fit_input#gain_one_month",
+        "size": 1541303
+      },
+      {
+        "content_hash": "sha256:bebc4a53c7edc2216d37497d02358680d815f3ab4453b39d5a6552b50d43c70a",
+        "entry": "drift#huber_fit",
+        "size": 7464
+      },
+      {
+        "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
+        "entry": "fit_input#huber_fit",
+        "size": 913390
+      },
+      {
+        "content_hash": "sha256:ee8f83cdb009e838736ba7b2acd45e369fe3ab66b7816c86288e06e9d240023f",
+        "entry": "drift#battery_steps",
+        "size": 7761
+      },
+      {
+        "content_hash": "sha256:9ff2ac42889223919ee101586e063404c537df6e51e0d32a1ae11f492993654d",
+        "entry": "fit_input#battery_steps",
+        "size": 913429
+      },
+      {
+        "content_hash": "sha256:07fefdb9a4d7dac5336919cbb07f782dd2886b205a32535205146b4daabd39c5",
+        "entry": "drift#robust",
+        "size": 8762
+      },
+      {
+        "content_hash": "sha256:9ff2ac42889223919ee101586e063404c537df6e51e0d32a1ae11f492993654d",
+        "entry": "fit_input#robust",
+        "size": 913429
+      },
+      {
+        "content_hash": "sha256:8dda0c650d66c243fd5f78763f2b49dcfab193ccc83c234183b8319a68333170",
+        "entry": "drift#robust_january_gain",
+        "size": 9076
+      },
+      {
+        "content_hash": "sha256:0de1699c01e29ca372438dd04c7d1072e768763da2b1103b8cdcf48f7d723428",
+        "entry": "fit_input#robust_january_gain",
+        "size": 1541342
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T14:32:36.947Z"
+  },
+  "size": 5624,
+  "spec_version": "0.1.0"
+}
