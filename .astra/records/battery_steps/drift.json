@@ -1,12 +1,12 @@
 {
   "address": "drift#battery_steps",
-  "content_hash": "sha256:ee8f83cdb009e838736ba7b2acd45e369fe3ab66b7816c86288e06e9d240023f",
+  "content_hash": "sha256:88b27d6dbc2b89d6631c368447a8b6779048e99b341ea1825c86c37d52a9d9cf",
   "generated_by": {
-    "commit": "51614ebe1afd68ed1090ddb0ad261e78dc2870e2",
+    "commit": "6320f29d9807fc73aa25f06743044a2c699715ca",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T15:57:02.361Z",
+    "finished": "2026-11-24T15:59:54.238Z",
     "inputs": [
       {
         "content_hash": "sha256:9ff2ac42889223919ee101586e063404c537df6e51e0d32a1ae11f492993654d",
@@ -14,9 +14,9 @@
         "size": 913429
       },
       {
-        "content_hash": "sha256:a006edd1294b4f1f77c88fafbc1cb26388da950dd77b22dce9c97bb4d14a8054",
-        "entry": "noise.noise_models#hann",
-        "size": 6703
+        "content_hash": "sha256:e076d60a950eb733c8dd6a2a4066d2114e4ed1a4ce34d08af3d2e3ab7e107c2c",
+        "entry": "noise.noise_models#hann_slope_one",
+        "size": 6113
       },
       {
         "content_hash": "sha256:d79cbb23f1fb66e9c8936cafca928feb68e123990dd7b5855f663fc8a55a20d6",
@@ -28,7 +28,7 @@
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T15:55:31.853Z"
+    "started": "2026-11-24T15:58:25.289Z"
   },
   "size": 7761,
   "spec_version": "0.1.0"
