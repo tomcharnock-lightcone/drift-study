@@ -31,7 +31,8 @@ Inputs:
   to find battery swaps.
 - The sensors' noise models from
   [noise-models](https://github.com/tomcharnock-lightcone/noise-models)
-  (`analyses.noise`), likewise at a fixed commit.
+  (`analyses.noise`), likewise at a fixed commit: its default table, Hann
+  window with the 1/f slope held at 1 (`noise_models#hann_slope_one`).
 - Hourly air temperature of the Freiburg network, Plein, Christen & Dormann,
   *Street-level weather station network in Freiburg, Germany* (L2, 1.0.0),
   [doi:10.5281/zenodo.21307957](https://doi.org/10.5281/zenodo.21307957),

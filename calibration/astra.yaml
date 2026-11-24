@@ -86,12 +86,12 @@ outputs:
       day, on the days whose 24 hours are all measured at it and at FRPDAS,
       and it is listed only if those are at least two thirds of the
       window's days.
-    inputs: [study.differences, study.reference_daily, noise.noise_models#hann]
+    inputs: [study.differences, study.reference_daily, noise.noise_models#hann_slope_one]
     decisions: [window, model]
     recipe:
       command: >-
         python src/calibrate.py {inputs.study.differences}
-        {inputs.study.reference_daily} FRPDAS {inputs.noise.noise_models#hann}
+        {inputs.study.reference_daily} FRPDAS {inputs.noise.noise_models#hann_slope_one}
         {decisions.window} {decisions.model} {output}
 
   calibrated:

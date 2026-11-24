@@ -116,9 +116,9 @@ decisions:
         label: From the sensor's noise model
         description: >-
           The variance of the fitted drift under the sensor's chamber noise
-          model (noise-models, Hann window), propagated through the daily
-          means and the fit's weights; Gaussian interval. Instrument noise
-          only.
+          model (noise-models' default: Hann window, 1/f slope held at 1),
+          propagated through the daily means and the fit's weights; Gaussian
+          interval. Instrument noise only.
       combined:
         label: Both added
         description: >-
@@ -297,12 +297,12 @@ outputs:
       residuals, whose ratio is the share of the daily scatter the sensor's
       own noise explains. Offset and temperature-coefficient errors are
       always from the residuals.
-    inputs: [fit_input, noise.noise_models#hann, battery_swaps]
+    inputs: [fit_input, noise.noise_models#hann_slope_one, battery_swaps]
     decisions: [drift_model, drift_errors, fit_method, swap_steps]
     recipe:
       command: >-
         python src/fit_drift.py {inputs.fit_input} {decisions.drift_model}
-        {decisions.drift_errors} {inputs.noise.noise_models#hann}
+        {decisions.drift_errors} {inputs.noise.noise_models#hann_slope_one}
         {decisions.fit_method} {decisions.swap_steps} {inputs.battery_swaps}
         {output}
 

@@ -81,7 +81,8 @@ adjustment. `tests/test_drift_stats.py` repeats that comparison.
 **Uncertainties from what is known about the sensors.**
 [noise-models](https://github.com/tomcharnock-lightcone/noise-models)
 measured each sensor's noise in a climate chamber: a white floor plus a 1/f
-part, given by its power spectral density (the Hann-window models, read at
+part, given by its power spectral density (its default models, Hann window
+with the 1/f slope held at exactly 1, read at
 the commit `astra.yaml` declares as `analyses.noise`). A fitted drift is a
 weighted sum of daily means, so its variance under that noise is an integral
 of the spectrum through the daily-mean filter and the fit's weights
