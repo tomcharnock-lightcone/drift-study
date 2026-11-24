@@ -4,9 +4,10 @@ spec_version: "0.1.0"
 label: "drift-study"
 description: >-
   How far each of the city's 40 low-cost temperature sensors (s01 to s40)
-  drifted over 2023. Each sensor's despiked daily mean, from sensor-archive,
-  is compared with the daily mean air temperature of FRPDAS, a station of
-  Freiburg's street-level weather network (Plein, Christen & Dormann,
+  drifted over 2023. Each sensor's despiked daily mean, from sensor-archive
+  (despiked at 3 °C, and at 1 °C for comparison), is compared with the daily
+  mean air temperature of FRPDAS, a station of Freiburg's street-level
+  weather network (Plein, Christen & Dormann,
   doi:10.5281/zenodo.21307957), and a linear drift is fitted per sensor to the
   daily difference: in the baseline, beside a bias proportional to the
   reference temperature and a free step at each battery swap, found in the
@@ -24,7 +25,7 @@ description: >-
 analyses:
   archive:
     url: https://github.com/tomcharnock-lightcone/sensor-archive
-    commit: 665b3336161ecf20820c837262dbf1c66e21625e
+    commit: d32f0cf1b2cc5219402f6d49cefa7dc5fb313640
   noise:
     url: https://github.com/tomcharnock-lightcone/noise-models
     commit: df53934304bc2abedc11eea60311fae783f17625
@@ -35,6 +36,29 @@ analyses:
     commit: 9e7861306eaf209e82a16ad4d42e8d9c7c3a5674
 
 decisions:
+  despike:
+    label: Despiking threshold
+    rationale: >-
+      sensor-archive drops a reading that sits too far from the rolling
+      median of the 31 readings around it, and builds a daily summary for
+      each threshold (its decision of the same name). At 3 °C only the
+      spikes go: ordinary readings stay within 2 °C of that median and the
+      spikes lie beyond 4 °C. At 1 °C some ordinary readings go with them,
+      about four times as many readings in all. A spike moves a day's mean
+      little, but a threshold that eats into real change could bias it, so
+      whether the threshold reaches the drift is checked.
+    options:
+      median3c:
+        label: 3 °C
+        description: >-
+          sensor-archive's despiked summary (its universe despiked).
+      median1c:
+        label: 1 °C
+        description: >-
+          sensor-archive's summary despiked at 1 °C (its universe
+          despiked_1c). Readings it drops still count as delivered for
+          min_coverage, as at 3 °C.
+
   reference_hours:
     label: Reference hours
     rationale: >-
@@ -232,6 +256,12 @@ outputs:
     recipe:
       command: python src/battery_swaps.py {inputs.archive.daily_battery} {output}
 
+  sensor_summary:
+    switch: despike
+    cases:
+      median3c: archive.daily_summary#despiked
+      median1c: archive.daily_summary#despiked_1c
+
   differences:
     label: Sensor minus reference, per day
     type: table
@@ -246,11 +276,11 @@ outputs:
       cannot tell how much of was stuck), low_coverage, no_reference,
       reference_gap_filled, and battery_swap (under swap_steps at_swaps, a
       day the sensor's battery was swapped within).
-    inputs: [archive.daily_summary#despiked, reference_daily, battery_swaps]
+    inputs: [sensor_summary, reference_daily, battery_swaps]
     decisions: [reference_hours, min_coverage, swap_steps]
     recipe:
       command: >-
-        python src/differences.py {inputs.archive.daily_summary#despiked}
+        python src/differences.py {inputs.sensor_summary}
         {inputs.reference_daily} FRPDAS {decisions.reference_hours}
         {decisions.min_coverage} {inputs.battery_swaps}
         {decisions.swap_steps} {output}
@@ -389,7 +419,8 @@ outputs:
       the largest change in units of the baseline's standard error, the
       median drift, the median ratio of the quoted drift error to the
       baseline's, and how many sensors' 95% intervals exclude zero. The
-      alternatives are the baseline's screening and its errors; what the
+      alternatives are the baseline's screening, its despiking threshold and
+      its errors; what the
       temperature term, the steps and the robust fit change is
       robust_comparison's.
     inputs:
@@ -398,13 +429,15 @@ outputs:
       - drift#coverage_90
       - drift#noise_model_errors
       - drift#residual_errors
+      - drift#despiking_1c
     recipe:
       command: >-
         python src/compare_universes.py {inputs.drift#baseline}
         gap_filled_reference={inputs.drift#gap_filled_reference}
         coverage_90={inputs.drift#coverage_90}
         noise_model_errors={inputs.drift#noise_model_errors}
-        residual_errors={inputs.drift#residual_errors} {output}
+        residual_errors={inputs.drift#residual_errors}
+        despiking_1c={inputs.drift#despiking_1c} {output}
 
   calibration_comparison:
     label: What calibrating changes
@@ -633,12 +666,14 @@ universes:
   baseline:
     label: Baseline
     description: >-
-      Measured reference days, sensor-days at least 99% covered, drift linear
-      in time beside a temperature-dependent bias, a free step at each
-      battery swap, Huber's robust fit, drift errors from the residuals and
-      the noise models together, no calibration. This was the robust
-      universe until v1, whose baseline was the simple fit.
+      Readings despiked at 3 °C, measured reference days, sensor-days at
+      least 99% covered, drift linear in time beside a temperature-dependent
+      bias, a free step at each battery swap, Huber's robust fit, drift
+      errors from the residuals and the noise models together, no
+      calibration. This was the robust universe until v1, whose baseline was
+      the simple fit.
     decisions:
+      despike: median3c
       reference_hours: measured
       min_coverage: p99
       drift_model: time_and_temperature
@@ -666,6 +701,15 @@ universes:
     derived_from: baseline
     decisions:
       drift_errors: residual_ar1
+  despiking_1c:
+    label: Readings despiked at 1 °C
+    description: >-
+      The baseline on sensor-archive's summary despiked at 1 °C instead of
+      3 °C. Named apart from the archive's universe despiked_1c, which the
+      switch sensor_summary pins.
+    derived_from: baseline
+    decisions:
+      despike: median1c
   robust_january_gain:
     label: The baseline with the January gain calibration instead
     description: >-
