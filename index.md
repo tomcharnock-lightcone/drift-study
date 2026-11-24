@@ -3,8 +3,11 @@
 How far did each of the city's 40 low-cost temperature sensors (`s01` to
 `s40`) drift over 2023? Each sensor's daily mean is compared with that of a
 reference station, FRPDAS of Freiburg's street-level weather network, and a
-linear drift is fitted to the daily difference, sensor by sensor. The
-analysis is specified in `astra.yaml` (ASTRA 0.1) and run with lightcone-cli
+linear drift is fitted to the daily difference, sensor by sensor: in the
+baseline, beside a temperature-dependent bias and a step at each battery
+swap, by a fit robust to outlying days. A plain line by least squares, the
+baseline until the version tagged `v1`, is kept beside it as the simple fit.
+The analysis is specified in `astra.yaml` (ASTRA 0.1) and run with lightcone-cli
 (`lc`). This report quotes no measured value: the numbers live in the results
 it names, and the claims made from them are the `findings` of `astra.yaml`.
 
@@ -55,7 +58,8 @@ sensor's daily mean minus FRPDAS's, and marks the days not to use
 - *reference_gap_filled*: a day on which some of FRPDAS's hours are
   predictions, where the `measured` option is chosen.
 
-**Drift.** `src/fit_drift.py` fits each sensor's used days by least squares,
+**Drift.** `src/fit_drift.py` fits each sensor's used days, by least squares
+or, in the baseline, by Huber's M-estimate (below),
 
 $$
 d(t) = a + b\,t \qquad\text{or}\qquad d(t) = a + b\,t + c\,(T_\mathrm{ref} - \bar T_\mathrm{ref}),
@@ -63,7 +67,8 @@ $$
 
 with $d$ the daily difference (°C), $t$ the time from 2023-07-02 in years, so
 that $b$ is the drift in °C per year and $a$ the difference at mid-year. The
-second form is the `time_and_temperature` drift model (below).
+second form is the `time_and_temperature` drift model, the baseline's
+(below), which also gives the fit a free step at each battery swap.
 
 **Uncertainties.** A sensor's daily differences are far from independent:
 whatever makes one day's difference large (sun, wind, two sites answering the
@@ -108,16 +113,18 @@ residuals', the noise model's, or both variances added (`combined`, which
 counts the sensor's day-to-day noise twice and so errs wide). The baseline
 adds them; each alone is built for comparison.
 
-**Decisions, each built in its own universe:**
+**Decisions, each built in its own universe.** The baseline fits the drift
+beside a temperature-dependent bias, with a step at each battery swap, by
+Huber's fit (all three below). Its screening and its errors are varied one
+at a time:
 
-| Universe | Reference days | Sensor-day coverage | Drift model | Drift errors |
-|---|---|---|---|---|
-| `baseline` | measured only | ≥ 99% | linear in time | both added |
-| `temperature_term` | measured only | ≥ 99% | + temperature-dependent bias | both added |
-| `gap_filled_reference` | gap-filled too | ≥ 99% | linear in time | both added |
-| `coverage_90` | measured only | ≥ 90% | linear in time | both added |
-| `residual_errors` | measured only | ≥ 99% | linear in time | residuals |
-| `noise_model_errors` | measured only | ≥ 99% | linear in time | noise model |
+| Universe | Reference days | Sensor-day coverage | Drift errors |
+|---|---|---|---|
+| `baseline` | measured only | ≥ 99% | both added |
+| `gap_filled_reference` | gap-filled too | ≥ 99% | both added |
+| `coverage_90` | measured only | ≥ 90% | both added |
+| `residual_errors` | measured only | ≥ 99% | residuals |
+| `noise_model_errors` | measured only | ≥ 99% | noise model |
 
 The temperature term is there because a sensor whose bias depends on
 temperature (a gain error, or a radiation shield that lets warm, sunny days
@@ -144,17 +151,24 @@ coverage). The noise model is propagated through the fit's final weights.
 A step has to be fitted with the sensor's gain taken out. A swap in March
 or September falls where a sensor with a gain has its difference changing
 fastest with the season; a step alone cannot follow that, and fits a jump
-that seems to settle over the following weeks instead. So the robust
-universe fits the steps together with the temperature term, and a second
-one takes the gain out by the January calibration instead, a gain fitted
-before every swap, which cannot trade off against the steps.
+that seems to settle over the following weeks instead. So the baseline fits
+the steps together with the temperature term, and `robust_january_gain`
+takes the gain out by the January calibration instead, a gain fitted before
+every swap, which cannot trade off against the steps.
 
-| Universe | Battery swaps | Gain taken out by | Fit |
-|---|---|---|---|
-| `huber_fit` | no allowance | — | Huber |
-| `battery_steps` | a step at each | — | least squares |
-| `robust` | a step at each | temperature term | Huber |
-| `robust_january_gain` | a step at each | January calibration | Huber |
+**The simple fit.** Until `v1` the baseline was a line in time by least
+squares, with no allowance for battery swaps. It is kept as `simple_fit`,
+and each of the baseline's three additions is built on it alone, to show
+what each does:
+
+| Universe | Drift model | Battery swaps | Gain taken out by | Fit |
+|---|---|---|---|---|
+| `simple_fit` | linear in time | no allowance | — | least squares |
+| `temperature_term` | + temperature-dependent bias | no allowance | temperature term | least squares |
+| `battery_steps` | linear in time | a step at each | — | least squares |
+| `huber_fit` | linear in time | no allowance | — | Huber |
+| `baseline` | + temperature-dependent bias | a step at each | temperature term | Huber |
+| `robust_january_gain` | linear in time | a step at each | January calibration | Huber |
 
 Every other choice is the baseline's.
 
@@ -197,7 +211,7 @@ alone puts into a gain.
 | `gain_one_month` | January | gain and offset |
 | `gain_three_months` | January to March | gain and offset |
 
-Every other choice is the baseline's. A longer window has more days and a
+Each is the simple fit, calibrated; every other choice is the baseline's. A longer window has more days and a
 wider range of temperatures to fit a gain to, but more of the year's drift
 happens inside it.
 
@@ -213,21 +227,24 @@ different sites answering the same weather differently.
 ```{figure} results/baseline/drift_summary.png
 :label: fig-drift
 Each sensor's drift against FRPDAS with its 95% interval (baseline: the
-residuals' and the noise models' errors added). The grey band is the 5th–95th percentile of the apparent drifts of Freiburg's
-other stations against FRPDAS over the same year.
-`results/temperature_term/drift_summary.png` is the same with the
-temperature term.
+temperature term, a step at each battery swap and Huber's fit, with the
+residuals' and the noise models' errors added). The grey band is the
+5th–95th percentile of the apparent drifts of Freiburg's other stations
+against FRPDAS over the same year, under the same drift model.
+`results/simple_fit/drift_summary.png` is the same for the simple fit.
 ```
 
 ```{figure} results/baseline/difference_series.png
 :label: fig-series
 Every sensor's daily difference from FRPDAS (dots), the days excluded
-(rings, pinned to the panel's edge when beyond it), and the fitted drift.
+(rings, pinned to the panel's edge when beyond it), and the baseline's
+fitted drift, with its steps.
 ```
 
 ```{figure} results/model_comparison.png
 :label: fig-models
-Each sensor's drift with and without the temperature term.
+Each sensor's drift in the simple fit, with and without the temperature
+term.
 ```
 
 ```{figure} results/error_comparison.png
@@ -236,21 +253,22 @@ Each sensor's drift error from its residuals and from its noise model. The
 baseline's error is the two added in quadrature.
 ```
 
-**The sensors drift upward as a group** ([](#fig-drift)): more than half of
-them by more than their uncertainty, a few downward, and a handful not measurably at
-all (finding `sensors_drift_upward`; every sensor's numbers are in
-`results/baseline/drift.csv`). **The reference is not the cause:** FRPDAS
+**The sensors drift upward as a group** ([](#fig-drift)): about half of
+them by more than their uncertainty, most of those upward and a few
+downward, and the rest not measurably (finding `sensors_drift_upward`;
+every sensor's numbers are in `results/baseline/drift.csv`). **The reference is not the cause:** FRPDAS
 shows no significant drift against the rest of the Freiburg network (finding
 `reference_stable`).
 
 **Where the uncertainty comes from** ([](#fig-errors), finding
-`both_error_sources_matter`). For some sensors the residuals' scatter
-dominates: their differences carry the sites' different response to the
-weather, which the sensor's own noise cannot explain (`s22`, `s21`, `s07`,
-`s15`). For others the sensor's slow 1/f wander, as its chamber model
-extends it over a year, outweighs what the residuals show (`s13`, `s30`,
-`s32`, `s24`), and an AR(1) model of the residuals would have made their
-drift look far more certain than it is. At the scale of a day the sensor's
+`both_error_sources_matter`). In the baseline the sensor's slow 1/f
+wander, as its chamber model extends it over a year, outweighs what the
+residuals show for every sensor: with the seasonal cycle and the steps
+fitted, the residuals are smaller and far less persistent than a plain
+line leaves them, and an AR(1) model of them alone would make every drift
+look far more certain than it is. In the simple fit, the residuals'
+scatter dominates for the sensors whose differences follow the seasons
+(`s22`, `s21`, `s07`, `s33`, `s15`), which the line leaves in them. At the scale of a day the sensor's
 own noise accounts for a minority of the scatter for most sensors
 (`noise_day_step_sd_c` against `observed_day_step_sd_c` in `drift.csv`),
 and never more than all of it, a check that the noise models hold outside
@@ -270,9 +288,10 @@ difference follows the seasons, rising in summer or falling, as for `s06`,
 absorbs that cycle: its residuals shrink, its interval narrows, and its
 drift moves by up to about the time-only fit's own uncertainty. Where the
 difference is a clean ramp, as for `s09`, `s16`, `s29` or `s30`, both models
-agree. Which drift to quote for a
-seasonal sensor depends on whether its temperature dependence is believed to
-be steady; with one year of data the analysis cannot say.
+agree. The baseline quotes the drift with the term, which assumes the
+sensor's temperature dependence is steady over the year; with one year of
+data the analysis cannot check that, and the simple fit's drifts stay
+beside it for a sensor whose dependence may have changed.
 
 **The screening choices do not matter.** Counting the reference's gap-filled
 days or lowering the coverage threshold leaves every drift within a fraction
@@ -281,16 +300,16 @@ of its uncertainty (finding `screening_choices_immaterial`,
 
 ```{figure} results/robust_drift.png
 :label: fig-robust
-Each sensor's drift in the baseline and in the robust universe, with a step
-at each battery swap, the temperature term and Huber's fit.
-`results/robust/difference_series.png` shows the steps.
+Each sensor's drift in the simple fit and in the baseline, with a step at
+each battery swap, the temperature term and Huber's fit.
+`results/baseline/difference_series.png` shows the steps.
 ```
 
 ```{figure} results/swap_residuals.png
 :label: fig-swaps
 The residuals of the step fits around each battery swap: with the gain left
-in (`battery_steps`), taken out by the temperature term (`robust`), and by
-the January calibration (`robust_january_gain`).
+in (`battery_steps`), taken out by the temperature term (the baseline), and
+by the January calibration (`robust_january_gain`).
 ```
 
 **Three sensors had a battery swap**, and their differences step there
@@ -305,9 +324,9 @@ no more than many, and `s34` turns out to drift downward, its swap having
 stepped it up by more. **Outliers do not matter** (finding
 `outliers_immaterial`): the screening has already removed the bad days, and
 Huber's fit leaves every drift where it was. **The conclusion stands**
-(finding `robust_agrees`): the robust universe still finds the sensors
-drifting upward as a group, by about what the temperature term alone gives,
-and the January calibration in its place agrees.
+(finding `robust_agrees`): the baseline finds the sensors drifting upward
+as a group, as the simple fit does, by about what the temperature term
+alone gives, and the January calibration in its place agrees.
 
 ```{figure} results/calibration_gains.png
 :label: fig-gains
@@ -318,8 +337,8 @@ Freiburg's other stations against FRPDAS over the same window.
 
 ```{figure} results/calibration_drift.png
 :label: fig-calibration
-Each sensor's drift uncalibrated (baseline) and calibrated with a gain and an
-offset over each window.
+Each sensor's drift uncalibrated (the simple fit) and calibrated with a gain
+and an offset over each window.
 ```
 
 **Calibrating an offset changes nothing** (finding
@@ -348,8 +367,9 @@ does** ([](#fig-calibration), finding `gain_calibration_moves_drift`), and
 in the same direction: the seasonal pattern a gain causes is what the
 temperature term absorbs, fitted from January instead of from the whole
 year. The network's median drift falls by about a sixth. Calibrated over
-January, `s11`, `s12` and `s23` no longer drift significantly, and `s22` and
-`s28`, whose seasonal cycle had widened their intervals, now do.
+January, `s23` no longer drifts significantly, and `s22` and `s28`, whose
+seasonal cycle had widened their intervals, now do; the baseline's
+temperature term does the same for those two.
 
 **Two weeks is too short for a gain** (finding `calibration_window`): the
 first fortnight of 2023 was mild, with little range in temperature, so its
@@ -366,8 +386,8 @@ about a fifth. A month does nearly as well as three.
   known to be co-located with FRPDAS. This analysis does not know where the
   sensors are.
 - **A straight line is not always the right shape.** The differences of
-  `s02`, `s20` and `s34` step at their battery swaps, which the baseline
-  draws a slope through and the robust universe allows for. Other sensors'
+  `s02`, `s20` and `s34` step at their battery swaps, which the simple fit
+  draws a slope through and the baseline allows for. Other sensors'
   differences follow the seasons, which the temperature term absorbs; for
   the swapped sensors the two have to be fitted together
   ([](#fig-swaps)).
@@ -388,6 +408,8 @@ about a fifth. A month does nearly as well as three.
   part assumes AR(1) residuals, and is too narrow where they carry slower
   structure (a seasonal shape the model misses). The noise models' part
   extends a week-long chamber run at about 20 °C to a year and to the
-  field's temperatures, which noise-models itself does not vouch for. The
+  field's temperatures, which noise-models itself does not vouch for; in
+  the baseline it is most of the error, so the extension carries most of
+  the interval's weight. The
   spread of the stations' apparent drifts is the most conservative
   yardstick.

@@ -4,23 +4,29 @@ How far the city's 40 low-cost temperature sensors (`s01` to `s40`) drifted
 over 2023, against FRPDAS, a station of Freiburg's street-level weather
 network.
 
-- Drift per sensor, with 95% intervals: `results/baseline/drift.csv`
-  (linear in time) and `results/temperature_term/drift.csv` (linear in time
-  plus a temperature-dependent bias). The intervals add the scatter of each
-  sensor's residuals to what its own noise model gives.
-- The same with each sensor first calibrated against FRPDAS over the start
-  of its record, `results/gain_<window>/drift.csv` (a gain and an offset)
-  and `results/offset_<window>/drift.csv` (an offset alone), for windows of
-  two weeks, one month and three months; what that changes,
+- Drift per sensor, with 95% intervals: `results/baseline/drift.csv`, linear
+  in time beside a temperature-dependent bias, with a free step at each
+  battery swap, fitted robustly to outlying days. The intervals add the
+  scatter of each sensor's residuals to what its own noise model gives.
+  `results/robust_january_gain/drift.csv` takes the sensors' gains out by a
+  January calibration instead of the temperature term.
+- The simple fit, a line in time by least squares and the baseline until
+  `v1`: `results/simple_fit/drift.csv`; and each of the baseline's additions
+  made to it alone, `results/temperature_term/`, `results/battery_steps/`
+  and `results/huber_fit/`. What each changes,
+  `results/robust_comparison.json`.
+- The simple fit with each sensor first calibrated against FRPDAS over the
+  start of its record, `results/gain_<window>/drift.csv` (a gain and an
+  offset) and `results/offset_<window>/drift.csv` (an offset alone), for
+  windows of two weeks, one month and three months; what that changes,
   `results/calibration_comparison.json`. The calibration is an analysis of
   its own, in [`calibration/`](calibration/README.md), which this one drives.
-- The same with a free step at each battery swap, the sensors' gains taken
-  out by the temperature term, and a fit robust to outlying days,
-  `results/robust/drift.csv` (`results/robust_january_gain/drift.csv` with
-  the January gain calibration instead); what that changes,
-  `results/robust_comparison.json`.
 - Method, checks and caveats: [`index.md`](index.md). Specification:
   `astra.yaml`.
+
+Versions: the tag `v1` holds the results as first published, with the
+simple fit as the baseline, sensor-archive at d6ded91 and noise-models at
+6402027 with the 1/f slope fitted per sensor.
 
 Inputs:
 

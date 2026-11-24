@@ -694,34 +694,46 @@ universes:
 findings:
   sensors_drift_upward:
     claim: >-
-      Against FRPDAS, the sensors drifted upward over 2023 as a group: their
-      median drift is +0.42 °C per year (drift linear in time), and 24 of the
-      40 sensors have a 95% interval that excludes zero, with the residuals'
-      and the noise models' errors added.
+      Against FRPDAS, the sensors drifted upward over 2023 as a group: in the
+      baseline, with a temperature-dependent bias, a step at each battery
+      swap and Huber's fit, their median drift is +0.32 °C per year, and 22
+      of the 40 sensors have a 95% interval that excludes zero, with the
+      residuals' and the noise models' errors added.
     evidence:
       - artifact: universe_comparison
-        quote: { exact: '"median_drift_c_per_year": 0.4159' }
+        quote: { exact: '"median_drift_c_per_year": 0.3193' }
       - artifact: universe_comparison
-        quote: { exact: '"n_sensors_ci95_excluding_zero": 24' }
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 22' }
 
   reference_stable:
     claim: >-
       FRPDAS shows no significant drift against the median of Freiburg's
       other stations over 2023: +0.11 °C per year, 95% interval −0.09 to
-      +0.31. The sensors' drifts are not the reference's.
+      +0.31, or +0.15, −0.04 to +0.35, with the temperature term the
+      baseline fits. The sensors' drifts are not the reference's.
     evidence:
       - artifact: reference_check
         quote: { exact: '"drift_c_per_year": 0.1058' }
       - artifact: reference_check
         quote: { exact: '"drift_ci95_low_c_per_year": -0.0943' }
+      - artifact: reference_check
+        quote: { exact: '"drift_c_per_year": 0.1509' }
+      - artifact: reference_check
+        quote: { exact: '"drift_ci95_low_c_per_year": -0.0431' }
 
   siting_floor:
     claim: >-
-      Maintained Freiburg stations show apparent linear drifts against FRPDAS
-      over 2023 from −0.43 to +0.43 °C per year (5th–95th percentile), from
-      their sites alone. A sensor's drift inside that range cannot be told
-      apart from where it stands, unless it is co-located with FRPDAS.
+      Maintained Freiburg stations show apparent drifts against FRPDAS over
+      2023 from −0.36 to +0.54 °C per year (5th–95th percentile) under the
+      baseline's drift model, with the temperature term, and from −0.43 to
+      +0.43 with a line in time alone, from their sites alone. A sensor's
+      drift inside that range cannot be told apart from where it stands,
+      unless it is co-located with FRPDAS.
     evidence:
+      - artifact: reference_check
+        quote: { exact: '"drift_p05_c_per_year": -0.3607' }
+      - artifact: reference_check
+        quote: { exact: '"drift_p95_c_per_year": 0.5374' }
       - artifact: reference_check
         quote: { exact: '"drift_p05_c_per_year": -0.4279' }
       - artifact: reference_check
@@ -729,52 +741,57 @@ findings:
 
   temperature_term_matters:
     claim: >-
-      Allowing a temperature-dependent bias moves the sensors' drifts by a
-      median of 0.11 °C per year and by up to 0.37 °C per year (s22), and
-      lowers the median drift to +0.34 °C per year: for the sensors whose
-      difference follows the seasons, how drift is separated from a
-      temperature dependence matters about as much as the drift's
-      uncertainty, up to 1.1 of its standard error.
+      Added to the simple fit, a temperature-dependent bias moves the
+      sensors' drifts by a median of 0.11 °C per year and by up to 0.37 °C
+      per year (s22), and lowers the median drift from +0.42 to +0.34 °C per
+      year: for the sensors whose difference follows the seasons, how drift
+      is separated from a temperature dependence matters about as much as
+      the drift's uncertainty, up to 1.1 of its standard error.
     evidence:
-      - artifact: universe_comparison
+      - artifact: robust_comparison
         quote: { exact: '"median_abs_drift_change_c_per_year": 0.1099' }
-      - artifact: universe_comparison
+      - artifact: robust_comparison
         quote: { exact: '"max_abs_drift_change_c_per_year": 0.3706' }
-      - artifact: universe_comparison
+      - artifact: robust_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.4159' }
+      - artifact: robust_comparison
         quote: { exact: '"median_drift_c_per_year": 0.3357' }
-      - artifact: universe_comparison
-        quote: { exact: '"max_abs_drift_change_in_baseline_se": 1.116' }
+      - artifact: robust_comparison
+        quote: { exact: '"max_abs_drift_change_in_simple_fit_se": 1.136' }
 
   screening_choices_immaterial:
     claim: >-
       Counting FRPDAS's gap-filled days, or lowering the sensor-day coverage
-      threshold to 90%, changes no sensor's drift by more than 0.02 °C per
-      year, at most a tenth of its standard error. Either choice can be
-      made.
+      threshold to 90%, changes no sensor's drift in the baseline by more
+      than 0.02 °C per year, at most 0.13 of its standard error. Either
+      choice can be made.
     evidence:
       - artifact: universe_comparison
-        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0196' }
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0165' }
       - artifact: universe_comparison
-        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0121' }
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.01,' }
       - artifact: universe_comparison
-        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.104' }
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.127' }
 
   both_error_sources_matter:
     claim: >-
       Neither the residuals nor the sensors' noise models alone account for
-      the drift's uncertainty. Taken alone, the residual errors are a median
-      0.55 of the combined ones and the noise-model errors 0.83, and with
-      either alone more sensors' drifts would pass for significant: 34 or 30
-      of 40, against 24 with both.
+      the drift's uncertainty, though in the baseline the noise models carry
+      most of it. Taken alone, the residuals' errors are a median 0.28 of
+      the combined ones and the noise models' 0.96: with the seasons and the
+      steps fitted, the residuals are small and short-lived, and the
+      sensors' slow 1/f wander, which they cannot show, sets the error. With
+      either alone more sensors' drifts would pass for significant: 37 or 25
+      of 40, against 22 with both.
     evidence:
       - artifact: universe_comparison
-        quote: { exact: '"median_se_ratio_to_baseline": 0.553' }
+        quote: { exact: '"median_se_ratio_to_baseline": 0.277' }
       - artifact: universe_comparison
-        quote: { exact: '"median_se_ratio_to_baseline": 0.833' }
+        quote: { exact: '"median_se_ratio_to_baseline": 0.961' }
       - artifact: universe_comparison
-        quote: { exact: '"n_sensors_ci95_excluding_zero": 34' }
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 37' }
       - artifact: universe_comparison
-        quote: { exact: '"n_sensors_ci95_excluding_zero": 30' }
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 25' }
 
   offset_calibration_changes_nothing:
     claim: >-
@@ -788,7 +805,7 @@ findings:
   sensors_have_gains:
     claim: >-
       Many sensors follow the reference's temperature with a gain other than
-      1: calibrated over January, 18 of the 40 have a gain whose 95%
+      1: calibrated over January, 20 of the 40 have a gain whose 95%
       interval excludes 1, and their gains run from 0.96 to 1.05 (5th–95th
       percentile). The gain is not an accident of the window: over the
       sensors it correlates at 0.91 with the temperature coefficient fitted
@@ -796,7 +813,7 @@ findings:
       residual scatter over the year by a sixth.
     evidence:
       - artifact: calibration_comparison
-        quote: { exact: '"n_sensors_gain_ci95_excluding_one": 18' }
+        quote: { exact: '"n_sensors_gain_ci95_excluding_one": 20' }
       - artifact: calibration_comparison
         quote: { exact: '"sensor_gain_p05": 0.9629' }
       - artifact: calibration_comparison
@@ -804,7 +821,7 @@ findings:
       - artifact: calibration_comparison
         quote: { exact: '"gain_vs_temperature_coefficient_corr": 0.906' }
       - artifact: calibration_comparison
-        quote: { exact: '"median_residual_sd_ratio_to_baseline": 0.839' }
+        quote: { exact: '"median_residual_sd_ratio_to_simple_fit": 0.839' }
 
   gains_not_only_the_sensors:
     claim: >-
@@ -831,13 +848,13 @@ findings:
 
   gain_calibration_moves_drift:
     claim: >-
-      Calibrating a gain and an offset over January moves the sensors'
-      drifts by a median of 0.13 °C per year and by up to 0.43 °C per year
-      (s23), 1.8 of the baseline's standard error, and lowers the median
-      drift from +0.42 to +0.35 °C per year, close to the temperature term's
-      +0.34: a gain from January takes out much of the seasonal pattern the
-      whole year's temperature term does. With it, 23 of the 40 sensors
-      drift significantly, against 24 without.
+      Calibrating a gain and an offset over January, before the simple fit,
+      moves the sensors' drifts by a median of 0.13 °C per year and by up to
+      0.43 °C per year (s23), 1.5 of the simple fit's standard error, and
+      lowers the median drift from +0.42 to +0.35 °C per year, close to the
+      temperature term's +0.34: a gain from January takes out much of the
+      seasonal pattern the whole year's temperature term does. With it, 23
+      of the 40 sensors drift significantly, against 22 without.
     evidence:
       - artifact: calibration_comparison
         quote: { exact: '"median_abs_drift_change_c_per_year": 0.1345' }
@@ -846,35 +863,37 @@ findings:
       - artifact: calibration_comparison
         quote: { exact: '"sensor_of_max": "s23"' }
       - artifact: calibration_comparison
-        quote: { exact: '"max_abs_drift_change_in_baseline_se": 1.759' }
+        quote: { exact: '"max_abs_drift_change_in_simple_fit_se": 1.506' }
       - artifact: calibration_comparison
         quote: { exact: '"median_drift_c_per_year": 0.3472' }
-      - artifact: universe_comparison
+      - artifact: robust_comparison
         quote: { exact: '"median_drift_c_per_year": 0.3357' }
       - artifact: calibration_comparison
         quote: { exact: '"n_sensors_ci95_excluding_zero": 23' }
+      - artifact: calibration_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 22' }
 
   calibration_window:
     claim: >-
       Two weeks is too short to calibrate a gain, and a month is enough. The
       sensors' gains are known to a median standard error of 0.024 from two
-      weeks, 0.011 from a month and 0.009 from three; carried into the
-      drift, the two-week gain's uncertainty adds a median 0.14 °C per year
+      weeks, 0.010 from a month and 0.009 from three; carried into the
+      drift, the two-week gain's uncertainty adds a median 0.15 °C per year
       to its error and widens it by a fifth, the month's 0.07. Three months
       move the drifts much as one does, by a median of 0.13 °C per year.
     evidence:
       - artifact: calibration_comparison
-        quote: { exact: '"sensor_gain_median_se": 0.0236' }
+        quote: { exact: '"sensor_gain_median_se": 0.0244' }
       - artifact: calibration_comparison
-        quote: { exact: '"sensor_gain_median_se": 0.0107' }
+        quote: { exact: '"sensor_gain_median_se": 0.0104' }
       - artifact: calibration_comparison
-        quote: { exact: '"sensor_gain_median_se": 0.0086' }
+        quote: { exact: '"sensor_gain_median_se": 0.0085' }
       - artifact: calibration_comparison
-        quote: { exact: '"median_drift_se_calibration_c_per_year": 0.142' }
+        quote: { exact: '"median_drift_se_calibration_c_per_year": 0.1485' }
       - artifact: calibration_comparison
-        quote: { exact: '"median_se_ratio_to_baseline": 1.209' }
+        quote: { exact: '"median_se_ratio_to_simple_fit": 1.214' }
       - artifact: calibration_comparison
-        quote: { exact: '"median_drift_se_calibration_c_per_year": 0.0654' }
+        quote: { exact: '"median_drift_se_calibration_c_per_year": 0.0656' }
       - artifact: calibration_comparison
         quote: { exact: '"median_abs_drift_change_c_per_year": 0.1267' }
 
@@ -897,11 +916,12 @@ findings:
       that seems to settle: over the 28 days from the swap they average
       −0.17 and +0.39 °C. That is not the swap but each sensor's gain
       following the spring's warming and the autumn's cooling, which a step
-      cannot follow. With the gain taken out by the temperature term, the
-      residuals of every swapped sensor average within 0.05 °C of zero over
-      the 28 days either side of its swap, and the steps of s02 and s34 come
-      out twice as large or more, −0.63 and +0.81 °C against −0.31 and
-      +0.24. A step is enough; no settling needs modelling.
+      cannot follow. With the gain taken out by the temperature term, as in
+      the baseline, the residuals of every swapped sensor average within
+      0.05 °C of zero over the 28 days either side of its swap, and the
+      steps of s02 and s34 come out twice as large or more, −0.63 and +0.81
+      °C against −0.31 and +0.24. A step is enough; no settling needs
+      modelling.
     evidence:
       - artifact: robust_comparison
         quote: { exact: '"s02_residual_after_swap_c": -0.174' }
@@ -951,35 +971,41 @@ findings:
 
   outliers_immaterial:
     claim: >-
-      Outlying days do not drive the drifts. Huber's robust fit moves no
-      sensor's drift by more than 0.044 °C per year, 0.28 of its standard
-      error, and down-weights 14.5% of the days fitted, fewer than the 18%
-      it would for Gaussian residuals: after the screening, the residuals
+      Outlying days do not drive the drifts. Added to the simple fit,
+      Huber's robust fit moves no sensor's drift by more than 0.044 °C per
+      year, 0.25 of its standard error, and down-weights 14.5% of the days
+      fitted, fewer than the 18% it would for Gaussian residuals; in the
+      baseline it down-weights 17.9%. After the screening, the residuals
       have no heavy tail.
     evidence:
       - artifact: robust_comparison
         quote: { exact: '"max_abs_drift_change_c_per_year": 0.0444' }
       - artifact: robust_comparison
-        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.276' }
+        quote: { exact: '"max_abs_drift_change_in_simple_fit_se": 0.251' }
       - artifact: robust_comparison
         quote: { exact: '"share_days_downweighted": 0.145' }
+      - artifact: robust_comparison
+        quote: { exact: '"share_days_downweighted": 0.179' }
 
   robust_agrees:
     claim: >-
-      The robust universe, with a step at each battery swap, the temperature
-      term and Huber's fit, still finds the sensors drifting upward as a
-      group: a median of +0.32 °C per year, against the baseline's +0.42 and
-      the temperature term's +0.34 alone, and 25 of the 40 sensors
-      significantly, against 24. Taking the gain out by the January
-      calibration instead gives the same median, +0.32, with 22 significant.
+      The baseline, with a step at each battery swap, the temperature term
+      and Huber's fit, finds the sensors drifting upward as a group as the
+      simple fit does: a median of +0.32 °C per year, against the simple
+      fit's +0.42 and the temperature term's +0.34 alone, and 22 of the 40
+      sensors significantly, as many as in the simple fit. Taking the gain
+      out by the January calibration instead gives the same median, +0.32,
+      with 21 significant.
     evidence:
       - artifact: robust_comparison
         quote: { exact: '"median_drift_c_per_year": 0.3193' }
       - artifact: robust_comparison
-        quote: { exact: '"n_sensors_ci95_excluding_zero": 25' }
+        quote: { exact: '"median_drift_c_per_year": 0.4159' }
       - artifact: robust_comparison
         quote: { exact: '"median_drift_c_per_year": 0.3357' }
       - artifact: robust_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 22' }
+      - artifact: robust_comparison
         quote: { exact: '"median_drift_c_per_year": 0.3223' }
       - artifact: robust_comparison
-        quote: { exact: '"n_sensors_ci95_excluding_zero": 22' }
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 21' }
