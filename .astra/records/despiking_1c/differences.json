@@ -1,0 +1,35 @@
+{
+  "address": "differences#despiking_1c",
+  "content_hash": "sha256:d1ee2f938d53b3a909cc283a6e9cc4b7b3fe38c816185d9fba2990d6dad31ac3",
+  "generated_by": {
+    "commit": "ad6a9a006b5b8b2f8d22ee461230a27c7f7f2251",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T18:15:03.419Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:2322aa5125c8d5618aec811c89068fdfb3da06f854fa8e7ff6bfd5e496acd235",
+        "entry": "sensor_summary",
+        "size": 877017
+      },
+      {
+        "content_hash": "sha256:576589e6799d8b854ed16012e943f273d23a8412afc041ed8a91dac02e011fd7",
+        "entry": "reference_daily",
+        "size": 530739
+      },
+      {
+        "content_hash": "sha256:d79cbb23f1fb66e9c8936cafca928feb68e123990dd7b5855f663fc8a55a20d6",
+        "entry": "battery_swaps",
+        "size": 182
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T18:15:02.357Z"
+  },
+  "size": 913428,
+  "spec_version": "0.1.0"
+}
