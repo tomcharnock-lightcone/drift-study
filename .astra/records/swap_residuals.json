@@ -2,11 +2,11 @@
   "address": "swap_residuals",
   "content_hash": "sha256:c606877448a111f04b538fde6317f35b6671a89c1518f4968b1ca25653aed41c",
   "generated_by": {
-    "commit": "2e6d2ed38932fa69afb676bd7f5f65faf2d6bcdd",
+    "commit": "6320f29d9807fc73aa25f06743044a2c699715ca",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T14:32:39.871Z",
+    "finished": "2026-11-24T16:00:12.899Z",
     "inputs": [
       {
         "content_hash": "sha256:d79cbb23f1fb66e9c8936cafca928feb68e123990dd7b5855f663fc8a55a20d6",
@@ -19,7 +19,7 @@
         "size": 913429
       },
       {
-        "content_hash": "sha256:ee8f83cdb009e838736ba7b2acd45e369fe3ab66b7816c86288e06e9d240023f",
+        "content_hash": "sha256:88b27d6dbc2b89d6631c368447a8b6779048e99b341ea1825c86c37d52a9d9cf",
         "entry": "drift#battery_steps",
         "size": 7761
       },
@@ -29,26 +29,26 @@
         "size": 913429
       },
       {
-        "content_hash": "sha256:07fefdb9a4d7dac5336919cbb07f782dd2886b205a32535205146b4daabd39c5",
+        "content_hash": "sha256:155d9d7f0f16d043df13045f2265895a06d926027e669278ec72d150c95b27a7",
         "entry": "drift#robust",
-        "size": 8762
+        "size": 8765
       },
       {
-        "content_hash": "sha256:0de1699c01e29ca372438dd04c7d1072e768763da2b1103b8cdcf48f7d723428",
+        "content_hash": "sha256:37acaa11754a279c61beea4f4a083fb5d2d366b6779126161b682a3ebbe947cc",
         "entry": "fit_input#robust_january_gain",
         "size": 1541342
       },
       {
-        "content_hash": "sha256:8dda0c650d66c243fd5f78763f2b49dcfab193ccc83c234183b8319a68333170",
+        "content_hash": "sha256:3374de718343cabc725426ae5cd915801515d924e65ad645931a607363fd1a4c",
         "entry": "drift#robust_january_gain",
-        "size": 9076
+        "size": 9090
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T14:32:36.942Z"
+    "started": "2026-11-24T16:00:09.692Z"
   },
   "size": 225281,
   "spec_version": "0.1.0"
