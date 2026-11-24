@@ -2,15 +2,15 @@
   "address": "calibration_drift",
   "content_hash": "sha256:0dad416eb7d10b13e1b20ebcafc6b26bba7411c714b7bd2564ed22e0ce9c4eb6",
   "generated_by": {
-    "commit": "6320f29d9807fc73aa25f06743044a2c699715ca",
+    "commit": "9e2a85d9ce2f2b75b0307be80a64d0fb2dd26581",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T16:00:21.958Z",
+    "finished": "2026-11-24T16:09:20.749Z",
     "inputs": [
       {
         "content_hash": "sha256:f882d7f8026330a16cd196ecc5a71db20a9458d5b269b96b49d8a9038705c87c",
-        "entry": "drift#baseline",
+        "entry": "drift#simple_fit",
         "size": 7320
       },
       {
@@ -33,7 +33,7 @@
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T16:00:20.077Z"
+    "started": "2026-11-24T16:09:18.297Z"
   },
   "size": 125258,
   "spec_version": "0.1.0"
