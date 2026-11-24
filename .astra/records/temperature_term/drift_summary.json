@@ -1,0 +1,30 @@
+{
+  "address": "drift_summary#temperature_term",
+  "content_hash": "sha256:f4f42e73e8fd06261ca6079cdcdf2a617e6dd96d1b52a45118390ac252208614",
+  "generated_by": {
+    "commit": "5aafb4b64f724ff6f3fbbee6bf08e870cdc0b627",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T10:09:38.186Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:98ce5b2bdd8b6dac61a650b6368715c0df9c134f02d46612e0f4fe5860cbc448",
+        "entry": "drift",
+        "size": 6588
+      },
+      {
+        "content_hash": "sha256:13c824ef5e9fc567034147b6496c807299bf702f727cec70729d6562c075e67c",
+        "entry": "reference_check",
+        "size": 23343
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T10:09:36.397Z"
+  },
+  "size": 88384,
+  "spec_version": "0.1.0"
+}
