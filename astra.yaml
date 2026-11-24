@@ -30,6 +30,9 @@ analyses:
     commit: df53934304bc2abedc11eea60311fae783f17625
   calibration:
     path: calibration
+  v1:
+    url: https://github.com/tomcharnock-lightcone/drift-study
+    commit: 9e7861306eaf209e82a16ad4d42e8d9c7c3a5674
 
 decisions:
   reference_hours:
@@ -569,6 +572,63 @@ outputs:
         {inputs.drift#baseline} {output} "simple fit" baseline
         "How battery steps, the temperature term and a robust fit move the drift"
 
+  v1_comparison:
+    label: Drift per sensor, v1 and now
+    type: table
+    format: csv
+    description: >-
+      Each sensor's drift as this analysis published it in v1 (its baseline,
+      the simple fit, read from this repository at v1's commit, as
+      analyses.v1) against today's: the same model on today's inputs
+      (simple_fit) and today's baseline. Between the first two only the
+      inputs changed (sensor-archive and noise-models at their new commits,
+      noise-models' slope held at 1); between the last two only the model.
+      One row per sensor, sorted by the change in drift: for each fit, the
+      drift, its error and its significance (up, down or none, by the 95%
+      interval), prefixed v1_, same_model_ and now_; the change in drift
+      from v1 to now, in °C per year and in units of v1's error, and the
+      ratio of the errors; the same split into the part from the inputs and
+      the part from the model; which of the two changed the sensor's
+      significance, blank where it ends as it began; and n_battery_swaps
+      (src/compare_versions.py).
+    inputs: [v1.drift#v1_baseline, drift#simple_fit, drift#baseline]
+    recipe:
+      command: >-
+        python src/compare_versions.py table v1 {inputs.v1.drift#v1_baseline}
+        {inputs.drift#simple_fit} {inputs.drift#baseline} {output}
+
+  v1_comparison_summary:
+    label: What changed since v1, for the network
+    type: metric
+    format: json
+    description: >-
+      From v1_comparison: for v1, the same model today and today's
+      baseline, the network's median and mean drift, how many sensors drift
+      upward, how many significantly up and down, and the median drift
+      error; the median and largest change in drift since v1, the sensor
+      that moves most, how many move by more than v1's error, and the
+      largest change from the inputs and from the model; the median ratio of
+      the errors to v1's, and the range of that ratio from the inputs alone;
+      and each sensor whose significance changed, with which of the two
+      changed it.
+    inputs: [v1_comparison]
+    recipe:
+      command: python src/compare_versions.py summary v1 {inputs.v1_comparison} {output}
+
+  v1_drift:
+    label: Drift, v1 and now
+    type: figure
+    format: png
+    description: >-
+      Each sensor's drift and 95% interval as published in v1 (the simple
+      fit on v1's inputs) and in today's baseline, side by side.
+    inputs: [v1.drift#v1_baseline, drift#baseline]
+    recipe:
+      command: >-
+        python src/plot_model_comparison.py {inputs.v1.drift#v1_baseline}
+        {inputs.drift#baseline} {output} "v1 (simple fit)" "now (baseline)"
+        "How each sensor's drift moved since v1"
+
 universes:
   baseline:
     label: Baseline
@@ -690,6 +750,14 @@ universes:
       calibrate: initial_window
       calibration.window: three_months
       calibration.model: gain_and_offset
+  v1_baseline:
+    label: v1's baseline
+    description: >-
+      Imported from this analysis as published in v1 (analyses.v1): its
+      baseline, the simple fit on v1's inputs, to compare today's results
+      with.
+    analysis: v1
+    universe: baseline
 
 findings:
   sensors_drift_upward:
