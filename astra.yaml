@@ -885,6 +885,26 @@ findings:
       - artifact: universe_comparison
         quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.127' }
 
+  despiking_threshold_immaterial:
+    claim: >-
+      The despiking threshold does not reach the drifts. Despiked at 1 °C
+      instead of 3 °C, which drops ordinary readings along with the spikes,
+      the baseline's drifts move by at most 0.0013 °C per year (s30), 0.005
+      of its standard error; the median drift stays +0.32 °C per year, and
+      22 of the 40 sensors still drift significantly. Either threshold can
+      be used.
+    evidence:
+      - artifact: universe_comparison
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0013' }
+      - artifact: universe_comparison
+        quote: { exact: '"sensor_of_max": "s30"' }
+      - artifact: universe_comparison
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.005' }
+      - artifact: universe_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.3193' }
+      - artifact: universe_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 22' }
+
   both_error_sources_matter:
     claim: >-
       Neither the residuals nor the sensors' noise models alone account for

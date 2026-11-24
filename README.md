@@ -36,7 +36,9 @@ Inputs:
 
 - The sensors' despiked daily summaries, read from
   [sensor-archive](https://github.com/tomcharnock-lightcone/sensor-archive)
-  at a fixed commit (`analyses.archive` in `astra.yaml`).
+  at a fixed commit (`analyses.archive` in `astra.yaml`): despiked at 3 °C,
+  and at 1 °C in `results/despiking_1c/`, whose drifts
+  `results/universe_comparison.json` compares with the baseline's.
 - The sensors' daily battery voltage from sensor-archive (`daily_battery`),
   to find battery swaps.
 - The sensors' noise models from

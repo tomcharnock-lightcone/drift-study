@@ -19,7 +19,11 @@ it names, and the claims made from them are the `findings` of `astra.yaml`.
 the mean, minimum and maximum of the day's ten-second readings, how many there
 were, and how many despiking removed. They are read from GitHub at the commit
 `astra.yaml` declares (`analyses.archive`), so the result records exactly
-which summary it used; the raw readings are not needed. The archive's daily
+which summary it used; the raw readings are not needed. The archive drops a
+reading more than 3 °C from the rolling median of the 31 readings around it,
+which takes the spikes and nothing else. It also builds the summary at 1 °C
+(universe `despiked_1c`), which takes some ordinary readings too; which of the
+two this analysis reads is the decision `despike` (below). The archive's daily
 battery summary (`daily_battery`) gives each sensor's battery voltage per day,
 from which the battery swaps are found.
 
@@ -54,7 +58,10 @@ sensor's daily mean minus FRPDAS's, and marks the days not to use
   readings. A partial day's mean is biased by whichever part of the daily
   cycle is missing, and such days stand out in the differences by up to
   several °C. Readings removed by despiking count as delivered: they are
-  isolated single readings and leave no hole in the day.
+  isolated single readings and leave no hole in the day. At 1 °C despiking
+  also takes some ordinary readings, which count as delivered all the same;
+  counted as missing, they would change the screening of hardly any day
+  (checked while building the analysis).
 - *reference_gap_filled*: a day on which some of FRPDAS's hours are
   predictions, where the `measured` option is chosen.
 
@@ -115,16 +122,17 @@ adds them; each alone is built for comparison.
 
 **Decisions, each built in its own universe.** The baseline fits the drift
 beside a temperature-dependent bias, with a step at each battery swap, by
-Huber's fit (all three below). Its screening and its errors are varied one
-at a time:
+Huber's fit (all three below). Its despiking, its screening and its errors
+are varied one at a time:
 
-| Universe | Reference days | Sensor-day coverage | Drift errors |
-|---|---|---|---|
-| `baseline` | measured only | ≥ 99% | both added |
-| `gap_filled_reference` | gap-filled too | ≥ 99% | both added |
-| `coverage_90` | measured only | ≥ 90% | both added |
-| `residual_errors` | measured only | ≥ 99% | residuals |
-| `noise_model_errors` | measured only | ≥ 99% | noise model |
+| Universe | Despiking | Reference days | Sensor-day coverage | Drift errors |
+|---|---|---|---|---|
+| `baseline` | 3 °C | measured only | ≥ 99% | both added |
+| `despiking_1c` | 1 °C | measured only | ≥ 99% | both added |
+| `gap_filled_reference` | 3 °C | gap-filled too | ≥ 99% | both added |
+| `coverage_90` | 3 °C | measured only | ≥ 90% | both added |
+| `residual_errors` | 3 °C | measured only | ≥ 99% | residuals |
+| `noise_model_errors` | 3 °C | measured only | ≥ 99% | noise model |
 
 The temperature term is there because a sensor whose bias depends on
 temperature (a gain error, or a radiation shield that lets warm, sunny days
@@ -296,7 +304,12 @@ beside it for a sensor whose dependence may have changed.
 **The screening choices do not matter.** Counting the reference's gap-filled
 days or lowering the coverage threshold leaves every drift within a fraction
 of its uncertainty (finding `screening_choices_immaterial`,
-`results/universe_comparison.json`).
+`results/universe_comparison.json`). **Nor does the despiking threshold**
+(finding `despiking_threshold_immaterial`): despiked at 1 °C, with ordinary
+readings dropped along with the spikes, the same days are used and every
+drift stays where it was, to a tiny fraction of its uncertainty. A reading
+that strays a degree or two from its neighbours for a moment moves a day's
+mean by almost nothing.
 
 ```{figure} results/robust_drift.png
 :label: fig-robust
