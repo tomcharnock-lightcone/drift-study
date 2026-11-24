@@ -376,6 +376,28 @@ first fortnight of 2023 was mild, with little range in temperature, so its
 gains are uncertain, and carried into the drift they widen its interval by
 about a fifth. A month does nearly as well as three.
 
+## Changes since v1
+
+```{figure} results/v1_drift.png
+:label: fig-v1
+Each sensor's drift as published in v1, when the baseline was the simple
+fit, on sensor-archive at `d6ded91` and noise-models at `6402027`, and in
+today's baseline.
+```
+
+The analysis reads itself as it was published in v1 (the commit tagged
+`v1`, declared as `analyses.v1`) and sets each sensor's drift there beside
+today's (`results/v1_comparison.csv`; for the network,
+`results/v1_comparison_summary.json`). Today's simple fit is v1's model on
+today's inputs, so each change splits into what the inputs did and what the
+model did (finding `changes_since_v1`). **The inputs moved only errors:**
+sensor-archive's new commit gives the same tables, and noise-models' slope
+held at 1 changes each sensor's noise-model error, enough to take `s11` and
+`s12` below significance. **The rest is the new baseline** ([](#fig-v1)):
+`s20` and `s34` move most, at their battery swaps ([](#fig-robust)), `s20`
+and `s27` lose their significance, and `s22` and `s28`, whose intervals the
+temperature term narrows, gain it.
+
 ## Caveats
 
 - **A drift against one station is not the sensor's alone.** It includes how

@@ -1077,3 +1077,49 @@ findings:
         quote: { exact: '"median_drift_c_per_year": 0.3223' }
       - artifact: robust_comparison
         quote: { exact: '"n_sensors_ci95_excluding_zero": 21' }
+
+  changes_since_v1:
+    claim: >-
+      Since v1, the drifts moved only with the new baseline, and the new
+      inputs moved only their errors: v1's model on today's inputs changes
+      no sensor's drift, and its error by ×0.72 to ×1.26, from noise-models'
+      slope held at 1. The new baseline moves the drifts by a median of 0.14
+      °C per year and by up to 1.30 (s20, at its battery swap), and the
+      network's median drift from +0.42 to +0.32 °C per year. Seven sensors
+      changed significance: s11 and s12 lost it with the new noise models;
+      with the new baseline s20 and s27 lost it, s22 and s28 gained it, and
+      s34 turned from up to down. 17 sensors drift significantly up and 5
+      down, against 20 and 4 in v1.
+    evidence:
+      - artifact: v1_comparison_summary
+        quote: { exact: '"max_abs_drift_change_from_inputs_c_per_year": 0.0,' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"min_se_ratio_from_inputs": 0.724' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"max_se_ratio_from_inputs": 1.258' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"median_abs_drift_change_c_per_year": 0.1422' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"max_abs_drift_change_c_per_year": 1.2973' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"sensor_of_max": "s20"' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"v1_median_drift_c_per_year": 0.4159' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"now_median_drift_c_per_year": 0.3193' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"n_sensors_significance_changed": 7' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"s11": "up to none, by the inputs"' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"s12": "up to none, by the inputs"' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"s34": "up to down, by the model"' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"now_n_significantly_up": 17' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"now_n_significantly_down": 5' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"v1_n_significantly_up": 20' }
+      - artifact: v1_comparison_summary
+        quote: { exact: '"v1_n_significantly_down": 4' }

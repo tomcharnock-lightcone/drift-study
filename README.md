@@ -21,6 +21,10 @@ network.
   windows of two weeks, one month and three months; what that changes,
   `results/calibration_comparison.json`. The calibration is an analysis of
   its own, in [`calibration/`](calibration/README.md), which this one drives.
+- How the drifts changed since v1, per sensor and for the network:
+  `results/v1_comparison.csv`, `results/v1_comparison_summary.json` and
+  `results/v1_drift.png`, built from this repository at v1's commit
+  (`analyses.v1`).
 - Method, checks and caveats: [`index.md`](index.md). Specification:
   `astra.yaml`.
 
