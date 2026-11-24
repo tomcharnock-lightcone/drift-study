@@ -21,19 +21,22 @@ def excluding_zero(t: pd.DataFrame) -> int:
     return int(((t["drift_ci95_low_c_per_year"] > 0) | (t["drift_ci95_high_c_per_year"] < 0)).sum())
 
 
-def changes(base: pd.DataFrame, alt: pd.DataFrame, name: str) -> dict:
-    """How far one alternative's drift table, indexed by sensor, moves from the baseline's."""
+def changes(base: pd.DataFrame, alt: pd.DataFrame, name: str, against: str = "baseline") -> dict:
+    """How far one alternative's drift table, indexed by sensor, moves from another's.
+
+    `against` names the table compared with, in the keys that depend on it.
+    """
     if not alt.index.equals(base.index):
-        raise ValueError(f"{name} does not list the baseline's sensors")
+        raise ValueError(f"{name} does not list {against}'s sensors")
     size = (alt["drift_c_per_year"] - base["drift_c_per_year"]).abs()
     return {
         "max_abs_drift_change_c_per_year": round(float(size.max()), 4),
         "sensor_of_max": size.idxmax(),
         "median_abs_drift_change_c_per_year": round(float(size.median()), 4),
-        "max_abs_drift_change_in_baseline_se": round(
+        f"max_abs_drift_change_in_{against}_se": round(
             float((size / base["drift_se_c_per_year"]).max()), 3),
         "median_drift_c_per_year": round(float(alt["drift_c_per_year"].median()), 4),
-        "median_se_ratio_to_baseline": round(
+        f"median_se_ratio_to_{against}": round(
             float((alt["drift_se_c_per_year"] / base["drift_se_c_per_year"]).median()), 3),
         "n_sensors_ci95_excluding_zero": excluding_zero(alt),
     }

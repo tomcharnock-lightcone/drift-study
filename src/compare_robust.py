@@ -5,9 +5,10 @@ usage: python src/compare_robust.py BATTERY_SWAPS.csv NAME=DRIFT.csv,FIT_INPUT.c
 Each NAME is a universe, with its drift table and the table it was fitted
 to (src/differences.py's, or the calibration's), and COUNTERPART the name
 of an earlier entry that is the same fit without the steps and the robust
-fit, or `-`. The first entry is the baseline.
+fit, or `-`. The first entry is the one the others are compared with, and
+its name stands in the keys that depend on it.
 
-For each: how far the drifts move from the baseline's
+For each: how far the drifts move from the first entry's
 (src/compare_universes.py). Where it fits by Huber's M-estimate: how many
 days it down-weighted, in all and as a share of the days fitted (with
 c = 1.345 it would down-weight about 18% of Gaussian residuals). Where it
@@ -49,15 +50,15 @@ def main(battery_swaps: str, *rest: str) -> None:
         "dates": ";".join(f"{k}:{d}" for k, d in sorted(zip(sw["sensor"], sw["swap_date"]))),
     }}
     drifts: dict[str, pd.DataFrame] = {}
-    base = None
+    base = against = None
     for entry in entries:
         name, paths = entry.split("=", 1)
         drift_path, input_path, counterpart = paths.split(",")
         alt = pd.read_csv(drift_path, keep_default_na=False, na_values=[""]).set_index("sensor")
         drifts[name] = alt
         if base is None:
-            base = alt
-        item = changes(base, alt, name)
+            base, against = alt, name
+        item = changes(base, alt, name, against)
         if "n_days_downweighted" in alt:
             item["n_days_downweighted"] = int(alt["n_days_downweighted"].sum())
             item["share_days_downweighted"] = round(

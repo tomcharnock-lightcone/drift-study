@@ -1,15 +1,16 @@
 """What calibrating each sensor over an initial window does to its drift.
 
-usage: python src/compare_calibration.py BASELINE.csv TEMPERATURE_TERM.csv NAME=DRIFT.csv[,COEFFICIENTS.csv] [...] OUT.json
+usage: python src/compare_calibration.py [AGAINST=]UNCALIBRATED.csv TEMPERATURE_TERM.csv NAME=DRIFT.csv[,COEFFICIENTS.csv] [...] OUT.json
 
-BASELINE and TEMPERATURE_TERM are the uncalibrated drift tables, without and
-with the temperature term. Each NAME is a calibrated universe, with its
+UNCALIBRATED and TEMPERATURE_TERM are the uncalibrated drift tables, without
+and with the temperature term; AGAINST names the first (baseline if not
+given), in the keys that depend on it. Each NAME is a calibrated universe, with its
 drift table and, for a gain, the calibration's coefficients
 (calibration/src/calibrate.py).
 
-For each: how far the drifts move from the baseline's
+For each: how far the drifts move from the uncalibrated ones
 (src/compare_universes.py), the median drift error the calibration adds,
-and the median ratio of the residuals' scatter to the baseline's. For a
+and the median ratio of the residuals' scatter to the uncalibrated fit's. For a
 gain, also the spread of the sensors' gains and of the Freiburg stations'
 against the same reference over the same window, how many of each have a
 95% interval that excludes 1, and how closely a sensor's gain over the
@@ -43,12 +44,14 @@ def spread(gains: pd.DataFrame, who: str) -> dict:
     }
 
 
-def main(baseline: str, temperature_term: str, *rest: str) -> None:
+def main(uncalibrated: str, temperature_term: str, *rest: str) -> None:
     *entries, out = rest
-    base = pd.read_csv(baseline).set_index("sensor")
+    against, _, path = uncalibrated.rpartition("=")
+    against = against or "baseline"
+    base = pd.read_csv(path).set_index("sensor")
     temp = pd.read_csv(temperature_term).set_index("sensor")
     report = {
-        "baseline": {
+        against: {
             "median_drift_c_per_year": round(float(base["drift_c_per_year"].median()), 4),
             "n_sensors_ci95_excluding_zero": excluding_zero(base),
         }
@@ -57,10 +60,10 @@ def main(baseline: str, temperature_term: str, *rest: str) -> None:
         name, paths = entry.split("=", 1)
         drift_path, *coefficients = paths.split(",")
         alt = pd.read_csv(drift_path).set_index("sensor")
-        item = changes(base, alt, name)
+        item = changes(base, alt, name, against)
         item["median_drift_se_calibration_c_per_year"] = round(
             float(alt["drift_se_calibration_c_per_year"].median()), 4)
-        item["median_residual_sd_ratio_to_baseline"] = round(
+        item[f"median_residual_sd_ratio_to_{against}"] = round(
             float((alt["residual_sd_c"] / base["residual_sd_c"]).median()), 3)
         if coefficients:
             c = pd.read_csv(coefficients[0])

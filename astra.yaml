@@ -8,15 +8,18 @@ description: >-
   is compared with the daily mean air temperature of FRPDAS, a station of
   Freiburg's street-level weather network (Plein, Christen & Dormann,
   doi:10.5281/zenodo.21307957), and a linear drift is fitted per sensor to the
-  daily difference. The station file is streamed from Zenodo and checked
-  against its published MD5; only the daily means it gives are kept. Whether
-  FRPDAS itself is stable, and how much apparent drift two maintained stations
-  show against each other over one year, is checked against the rest of the
-  Freiburg network. Whether calibrating each sensor against FRPDAS over an
-  initial window, with an offset or a gain and an offset, changes the drift
-  is checked with the calibration analysis in calibration/; and whether the
-  drift survives a step at each battery swap, found in the archive's daily
-  battery voltage, and a fit robust to outlying days.
+  daily difference: in the baseline, beside a bias proportional to the
+  reference temperature and a free step at each battery swap, found in the
+  archive's daily battery voltage, by a fit robust to outlying days. The
+  simple fit, a line by least squares alone, is built for comparison, with
+  each of those additions to it on its own. The station file is streamed
+  from Zenodo and checked against its published MD5; only the daily means it
+  gives are kept. Whether FRPDAS itself is stable, and how much apparent
+  drift two maintained stations show against each other over one year, is
+  checked against the rest of the Freiburg network. Whether calibrating each
+  sensor against FRPDAS over an initial window, with an offset or a gain and
+  an offset, changes the drift is checked with the calibration analysis in
+  calibration/.
 
 analyses:
   archive:
@@ -139,8 +142,7 @@ decisions:
       parameter, and of any real drift that came at the swap. A swap in
       spring or autumn falls where a sensor with a gain has its difference
       changing fastest with the season, which a step alone cannot follow, so
-      the robust universe fits the step together with the temperature
-      term.
+      the baseline fits the step together with the temperature term.
     options:
       none:
         label: No allowance
@@ -266,7 +268,7 @@ outputs:
     type: table
     format: csv
     description: >-
-      One row per sensor, fitted by least squares to its used days:
+      One row per sensor, fitted to its used days (fit_method):
       drift_c_per_year (b, per 365.25 days) with drift_se_c_per_year and its
       95% interval (drift_ci95_low/high_c_per_year); offset_c (a, the
       difference at 2023-07-02) with offset_se_c; temp_coef_c_per_c and its
@@ -356,11 +358,11 @@ outputs:
     format: png
     description: >-
       Each sensor's drift and 95% interval under both drift models, side by
-      side.
-    inputs: [drift#baseline, drift#temperature_term]
+      side: the simple fit, and the same with the temperature term.
+    inputs: [drift#simple_fit, drift#temperature_term]
     recipe:
       command: >-
-        python src/plot_model_comparison.py {inputs.drift#baseline}
+        python src/plot_model_comparison.py {inputs.drift#simple_fit}
         {inputs.drift#temperature_term} {output}
 
   error_comparison:
@@ -383,10 +385,12 @@ outputs:
       median change in drift over the sensors, the sensor that moves most,
       the largest change in units of the baseline's standard error, the
       median drift, the median ratio of the quoted drift error to the
-      baseline's, and how many sensors' 95% intervals exclude zero.
+      baseline's, and how many sensors' 95% intervals exclude zero. The
+      alternatives are the baseline's screening and its errors; what the
+      temperature term, the steps and the robust fit change is
+      robust_comparison's.
     inputs:
       - drift#baseline
-      - drift#temperature_term
       - drift#gap_filled_reference
       - drift#coverage_90
       - drift#noise_model_errors
@@ -394,7 +398,6 @@ outputs:
     recipe:
       command: >-
         python src/compare_universes.py {inputs.drift#baseline}
-        temperature_term={inputs.drift#temperature_term}
         gap_filled_reference={inputs.drift#gap_filled_reference}
         coverage_90={inputs.drift#coverage_90}
         noise_model_errors={inputs.drift#noise_model_errors}
@@ -405,18 +408,19 @@ outputs:
     type: metric
     format: json
     description: >-
-      For each calibrated universe against the baseline: how far the drifts
-      move (as in universe_comparison), the median drift error the
-      calibration's gain adds, and the median ratio of the residuals'
-      scatter to the baseline's. For a gain, also the window, the spread of
-      the sensors' gains (median, 5th and 95th percentiles, standard
-      deviation, median error) and of the other Freiburg stations' against
-      FRPDAS over the same window, how many of each have a 95% interval
-      that excludes 1, and the correlation over the sensors of g − 1 from
-      the window with the temperature coefficient c fitted over the whole
-      year (drift#temperature_term).
+      For each calibrated universe against the simple fit, uncalibrated
+      (simple_fit; keys that depend on it name it): how far the drifts move
+      (as in universe_comparison), the median drift error the calibration's
+      gain adds, and the median ratio of the residuals' scatter to the
+      simple fit's. For a gain, also the window, the spread of the sensors'
+      gains (median, 5th and 95th percentiles, standard deviation, median
+      error) and of the other Freiburg stations' against FRPDAS over the
+      same window, how many of each have a 95% interval that excludes 1, and
+      the correlation over the sensors of g − 1 from the window with the
+      temperature coefficient c fitted over the whole year
+      (drift#temperature_term).
     inputs:
-      - drift#baseline
+      - drift#simple_fit
       - drift#temperature_term
       - drift#offset_two_weeks
       - drift#offset_one_month
@@ -429,7 +433,7 @@ outputs:
       - calibration_coefficients#gain_three_months
     recipe:
       command: >-
-        python src/compare_calibration.py {inputs.drift#baseline}
+        python src/compare_calibration.py simple_fit={inputs.drift#simple_fit}
         {inputs.drift#temperature_term}
         offset_two_weeks={inputs.drift#offset_two_weeks}
         offset_one_month={inputs.drift#offset_one_month}
@@ -464,41 +468,42 @@ outputs:
     type: figure
     format: png
     description: >-
-      Each sensor's drift and 95% interval uncalibrated (baseline) and
+      Each sensor's drift and 95% interval uncalibrated (the simple fit) and
       calibrated with a gain and an offset, one panel per window.
     inputs:
-      - drift#baseline
+      - drift#simple_fit
       - drift#gain_two_weeks
       - drift#gain_one_month
       - drift#gain_three_months
     recipe:
       command: >-
-        python src/plot_calibration_drift.py {inputs.drift#baseline}
+        python src/plot_calibration_drift.py {inputs.drift#simple_fit}
         two_weeks={inputs.drift#gain_two_weeks}
         one_month={inputs.drift#gain_one_month}
         three_months={inputs.drift#gain_three_months}
         {output}
 
   robust_comparison:
-    label: What battery steps and a robust fit change
+    label: What the temperature term, battery steps and a robust fit change
     type: metric
     format: json
     description: >-
       The battery swaps found; and for each of the temperature term
       (temperature_term), the January gain calibration (gain_one_month),
       Huber's fit (huber_fit), a step at each swap without the gain taken out
-      (battery_steps), and the robust universes (robust, with the temperature
-      term, and robust_january_gain), against the baseline: how far the
-      drifts move (as in universe_comparison) and how many days Huber's fit
-      down-weighted. For a fit with steps, against its counterpart without
-      steps or Huber's fit: the largest change among the sensors without a
-      swap; and for each sensor with one, its drift and its counterpart's,
-      the step with its error, and the mean residual over the 28 days either
-      side of the swap.
+      (battery_steps), and the universes with all three (the baseline, with
+      the temperature term, and robust_january_gain, with the January gain
+      calibration instead), against the simple fit (simple_fit; keys that
+      depend on it name it): how far the drifts move (as in
+      universe_comparison) and how many days Huber's fit down-weighted. For a
+      fit with steps, against its counterpart without steps or Huber's fit:
+      the largest change among the sensors without a swap; and for each
+      sensor with one, its drift and its counterpart's, the step with its
+      error, and the mean residual over the 28 days either side of the swap.
     inputs:
       - battery_swaps
-      - drift#baseline
-      - fit_input#baseline
+      - drift#simple_fit
+      - fit_input#simple_fit
       - drift#temperature_term
       - fit_input#temperature_term
       - drift#gain_one_month
@@ -507,19 +512,19 @@ outputs:
       - fit_input#huber_fit
       - drift#battery_steps
       - fit_input#battery_steps
-      - drift#robust
-      - fit_input#robust
+      - drift#baseline
+      - fit_input#baseline
       - drift#robust_january_gain
       - fit_input#robust_january_gain
     recipe:
       command: >-
         python src/compare_robust.py {inputs.battery_swaps}
-        baseline={inputs.drift#baseline},{inputs.fit_input#baseline},-
+        simple_fit={inputs.drift#simple_fit},{inputs.fit_input#simple_fit},-
         temperature_term={inputs.drift#temperature_term},{inputs.fit_input#temperature_term},-
         gain_one_month={inputs.drift#gain_one_month},{inputs.fit_input#gain_one_month},-
         huber_fit={inputs.drift#huber_fit},{inputs.fit_input#huber_fit},-
-        battery_steps={inputs.drift#battery_steps},{inputs.fit_input#battery_steps},baseline
-        robust={inputs.drift#robust},{inputs.fit_input#robust},temperature_term
+        battery_steps={inputs.drift#battery_steps},{inputs.fit_input#battery_steps},simple_fit
+        baseline={inputs.drift#baseline},{inputs.fit_input#baseline},temperature_term
         robust_january_gain={inputs.drift#robust_january_gain},{inputs.fit_input#robust_january_gain},gain_one_month
         {output}
 
@@ -531,37 +536,37 @@ outputs:
       For each sensor with a battery swap, the residuals of the step fit from
       90 days before the first day on the new battery to 120 after, with
       their 7-day running mean: a step without the gain taken out
-      (battery_steps), with the temperature term (robust), and with the
+      (battery_steps), with the temperature term (the baseline), and with the
       January gain calibration (robust_january_gain).
     inputs:
       - battery_swaps
       - fit_input#battery_steps
       - drift#battery_steps
-      - fit_input#robust
-      - drift#robust
+      - fit_input#baseline
+      - drift#baseline
       - fit_input#robust_january_gain
       - drift#robust_january_gain
     recipe:
       command: >-
         python src/plot_swap_residuals.py {inputs.battery_swaps}
         gain_left_in={inputs.fit_input#battery_steps},{inputs.drift#battery_steps}
-        temperature_term={inputs.fit_input#robust},{inputs.drift#robust}
+        temperature_term={inputs.fit_input#baseline},{inputs.drift#baseline}
         January_gain={inputs.fit_input#robust_january_gain},{inputs.drift#robust_january_gain}
         {output}
 
   robust_drift:
-    label: Drift, baseline and robust
+    label: Drift, simple fit and baseline
     type: figure
     format: png
     description: >-
-      Each sensor's drift and 95% interval in the baseline and in the robust
-      universe (a step at each battery swap, the temperature term, Huber's
+      Each sensor's drift and 95% interval in the simple fit and in the
+      baseline (a step at each battery swap, the temperature term, Huber's
       fit), side by side.
-    inputs: [drift#baseline, drift#robust]
+    inputs: [drift#simple_fit, drift#baseline]
     recipe:
       command: >-
-        python src/plot_model_comparison.py {inputs.drift#baseline}
-        {inputs.drift#robust} {output} baseline robust
+        python src/plot_model_comparison.py {inputs.drift#simple_fit}
+        {inputs.drift#baseline} {output} "simple fit" baseline
         "How battery steps, the temperature term and a robust fit move the drift"
 
 universes:
@@ -569,21 +574,18 @@ universes:
     label: Baseline
     description: >-
       Measured reference days, sensor-days at least 99% covered, drift linear
-      in time, drift errors from the residuals and the noise models together,
-      least squares with no allowance for battery swaps, no calibration.
+      in time beside a temperature-dependent bias, a free step at each
+      battery swap, Huber's robust fit, drift errors from the residuals and
+      the noise models together, no calibration. This was the robust
+      universe until v1, whose baseline was the simple fit.
     decisions:
       reference_hours: measured
       min_coverage: p99
-      drift_model: time_only
-      drift_errors: combined
-      swap_steps: none
-      fit_method: least_squares
-      calibrate: none
-  temperature_term:
-    label: With a temperature-dependent bias
-    derived_from: baseline
-    decisions:
       drift_model: time_and_temperature
+      drift_errors: combined
+      swap_steps: at_swaps
+      fit_method: huber
+      calibrate: none
   gap_filled_reference:
     label: Gap-filled reference days included
     derived_from: baseline
@@ -604,80 +606,86 @@ universes:
     derived_from: baseline
     decisions:
       drift_errors: residual_ar1
-  battery_steps:
-    label: A step at each battery swap, without the temperature term
-    description: >-
-      Built to show what a step does without the gain taken out; the robust
-      universe fits the step with the temperature term.
-    derived_from: baseline
-    decisions:
-      swap_steps: at_swaps
-  huber_fit:
-    label: Huber's robust fit
-    derived_from: baseline
-    decisions:
-      fit_method: huber
-  robust:
-    label: Robust
-    description: >-
-      The baseline with a free step at each battery swap, the temperature
-      term to take out the sensors' gains, and Huber's robust fit.
-    derived_from: baseline
-    decisions:
-      drift_model: time_and_temperature
-      swap_steps: at_swaps
-      fit_method: huber
   robust_january_gain:
-    label: Robust, with the January gain calibration
+    label: The baseline with the January gain calibration instead
     description: >-
-      The robust universe with each sensor's gain taken out by calibrating
-      it over January instead of by the temperature term: a gain fitted on
-      days before every swap, so it cannot trade off against the steps.
+      The baseline with each sensor's gain taken out by calibrating it over
+      January instead of by the temperature term: a gain fitted on days
+      before every swap, so it cannot trade off against the steps.
     derived_from: baseline
     decisions:
+      drift_model: time_only
       calibrate: initial_window
       calibration.window: one_month
       calibration.model: gain_and_offset
+  simple_fit:
+    label: Simple fit
+    description: >-
+      A line in time by least squares, with no allowance for battery swaps:
+      the baseline until v1. Each universe derived from it adds one thing:
+      the temperature term, a step at each swap, Huber's fit, or a
+      calibration.
+    derived_from: baseline
+    decisions:
+      drift_model: time_only
+      swap_steps: none
+      fit_method: least_squares
+  temperature_term:
+    label: Simple fit with a temperature-dependent bias
+    derived_from: simple_fit
+    decisions:
+      drift_model: time_and_temperature
+  battery_steps:
+    label: Simple fit with a step at each battery swap
+    description: >-
+      Built to show what a step does without the gain taken out; the
+      baseline fits the step with the temperature term.
+    derived_from: simple_fit
+    decisions:
       swap_steps: at_swaps
+  huber_fit:
+    label: Simple fit by Huber's M-estimate
+    derived_from: simple_fit
+    decisions:
       fit_method: huber
   offset_two_weeks:
     label: Calibrated over two weeks, offset only
-    derived_from: baseline
+    derived_from: simple_fit
     decisions:
       calibrate: initial_window
       calibration.window: two_weeks
       calibration.model: offset_only
   offset_one_month:
     label: Calibrated over one month, offset only
-    derived_from: baseline
+    derived_from: simple_fit
     decisions:
       calibrate: initial_window
       calibration.window: one_month
       calibration.model: offset_only
   offset_three_months:
     label: Calibrated over three months, offset only
-    derived_from: baseline
+    derived_from: simple_fit
     decisions:
       calibrate: initial_window
       calibration.window: three_months
       calibration.model: offset_only
   gain_two_weeks:
     label: Calibrated over two weeks, gain and offset
-    derived_from: baseline
+    derived_from: simple_fit
     decisions:
       calibrate: initial_window
       calibration.window: two_weeks
       calibration.model: gain_and_offset
   gain_one_month:
     label: Calibrated over one month, gain and offset
-    derived_from: baseline
+    derived_from: simple_fit
     decisions:
       calibrate: initial_window
       calibration.window: one_month
       calibration.model: gain_and_offset
   gain_three_months:
     label: Calibrated over three months, gain and offset
-    derived_from: baseline
+    derived_from: simple_fit
     decisions:
       calibrate: initial_window
       calibration.window: three_months
