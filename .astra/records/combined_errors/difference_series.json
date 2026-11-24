@@ -1,0 +1,30 @@
+{
+  "address": "difference_series#combined_errors",
+  "content_hash": "sha256:3291074716ed17d16bc2580068c7eb5118cc6ac006ea0cdcce85daa7167db039",
+  "generated_by": {
+    "commit": "9ffb0e563d601167ff68a8063c0b8653490ab01d",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T11:07:41.522Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
+        "entry": "differences",
+        "size": 913390
+      },
+      {
+        "content_hash": "sha256:ebf660532c56f821cd2a682cd5d2e84c6a518d89688faafb61bc81682c8dfa70",
+        "entry": "drift",
+        "size": 7317
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T11:07:33.634Z"
+  },
+  "size": 915920,
+  "spec_version": "0.1.0"
+}
