@@ -16,7 +16,7 @@ analyses:
     path: ..
   noise:
     url: https://github.com/tomcharnock-lightcone/noise-models
-    commit: 6402027ef2b830d6caab22e9a1f03811d0c1871a
+    commit: df53934304bc2abedc11eea60311fae783f17625
 
 decisions:
   window:
