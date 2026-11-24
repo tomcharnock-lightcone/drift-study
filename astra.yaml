@@ -98,7 +98,8 @@ decisions:
       keeps wandering over months. The noise model has that memory but knows
       nothing of the sites, and reaches a year only by extending a week-long
       chamber run, at about 20 °C, three decades below its lowest fitted
-      frequency. Neither is complete, so all three are built.
+      frequency. Neither is complete, so the baseline adds the two; each
+      alone is built for comparison.
     options:
       residual_ar1:
         label: From the residuals
@@ -277,7 +278,7 @@ outputs:
       - drift#gap_filled_reference
       - drift#coverage_90
       - drift#noise_model_errors
-      - drift#combined_errors
+      - drift#residual_errors
     recipe:
       command: >-
         python src/compare_universes.py {inputs.drift#baseline}
@@ -285,19 +286,19 @@ outputs:
         gap_filled_reference={inputs.drift#gap_filled_reference}
         coverage_90={inputs.drift#coverage_90}
         noise_model_errors={inputs.drift#noise_model_errors}
-        combined_errors={inputs.drift#combined_errors} {output}
+        residual_errors={inputs.drift#residual_errors} {output}
 
 universes:
   baseline:
     label: Baseline
     description: >-
       Measured reference days, sensor-days at least 99% covered, drift linear
-      in time, drift errors from the residuals.
+      in time, drift errors from the residuals and the noise models together.
     decisions:
       reference_hours: measured
       min_coverage: p99
       drift_model: time_only
-      drift_errors: residual_ar1
+      drift_errors: combined
   temperature_term:
     label: With a temperature-dependent bias
     derived_from: baseline
@@ -318,11 +319,11 @@ universes:
     derived_from: baseline
     decisions:
       drift_errors: noise_model
-  combined_errors:
-    label: Drift errors from residuals and noise models together
+  residual_errors:
+    label: Drift errors from the residuals alone
     derived_from: baseline
     decisions:
-      drift_errors: combined
+      drift_errors: residual_ar1
 
 findings:
   sensors_drift_upward:
