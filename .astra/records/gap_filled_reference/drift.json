@@ -1,0 +1,25 @@
+{
+  "address": "drift#gap_filled_reference",
+  "content_hash": "sha256:afb78cc954fa46daa898efc7b5f75911563cdc8e5ffb330ef8cf01f656c7232b",
+  "generated_by": {
+    "commit": "5aafb4b64f724ff6f3fbbee6bf08e870cdc0b627",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T10:09:35.934Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:075e4f6cd2d2de39219c1a137b19911fb28da9d8c4ce626b50e4050241afe9ab",
+        "entry": "differences",
+        "size": 902554
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T10:09:34.495Z"
+  },
+  "size": 5719,
+  "spec_version": "0.1.0"
+}
