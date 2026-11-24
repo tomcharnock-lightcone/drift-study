@@ -21,7 +21,7 @@ description: >-
 analyses:
   archive:
     url: https://github.com/tomcharnock-lightcone/sensor-archive
-    commit: d6ded91f6ec7f890d597a549f2c9058cc24663b1
+    commit: 665b3336161ecf20820c837262dbf1c66e21625e
   noise:
     url: https://github.com/tomcharnock-lightcone/noise-models
     commit: 6402027ef2b830d6caab22e9a1f03811d0c1871a
