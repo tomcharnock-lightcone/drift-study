@@ -1,0 +1,3 @@
+[submodule "sensor-archive"]
+	path = sensor-archive
+	url = https://github.com/tomcharnock-lightcone/sensor-archive
