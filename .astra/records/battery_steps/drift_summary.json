@@ -1,0 +1,30 @@
+{
+  "address": "drift_summary#battery_steps",
+  "content_hash": "sha256:41a1a524d287cb9797a368903ad77a86eac1512aec967d05dd7188db2fccb3d6",
+  "generated_by": {
+    "commit": "2e6d2ed38932fa69afb676bd7f5f65faf2d6bcdd",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T14:32:28.162Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:ee8f83cdb009e838736ba7b2acd45e369fe3ab66b7816c86288e06e9d240023f",
+        "entry": "drift",
+        "size": 7761
+      },
+      {
+        "content_hash": "sha256:13c824ef5e9fc567034147b6496c807299bf702f727cec70729d6562c075e67c",
+        "entry": "reference_check",
+        "size": 23343
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T14:32:26.330Z"
+  },
+  "size": 90723,
+  "spec_version": "0.1.0"
+}
