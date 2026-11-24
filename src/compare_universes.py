@@ -4,7 +4,8 @@ usage: python src/compare_universes.py BASELINE.csv NAME=DRIFT.csv [NAME=DRIFT.c
 
 For each alternative: the largest and the median change in drift over the
 sensors, which sensor changes most, the largest change in units of the
-baseline's standard error, the network's median drift in each, and how many
+baseline's standard error, the network's median drift in each, the median
+ratio of each sensor's quoted drift error to the baseline's, and how many
 sensors' 95% intervals exclude zero in each.
 """
 
@@ -44,6 +45,8 @@ def main(baseline: str, *rest: str) -> None:
             "max_abs_drift_change_in_baseline_se": round(
                 float((size / base["drift_se_c_per_year"]).max()), 3),
             "median_drift_c_per_year": round(float(alt["drift_c_per_year"].median()), 4),
+            "median_se_ratio_to_baseline": round(
+                float((alt["drift_se_c_per_year"] / base["drift_se_c_per_year"]).median()), 3),
             "n_sensors_ci95_excluding_zero": excluding_zero(alt),
         }
     with open(out, "w") as fh:

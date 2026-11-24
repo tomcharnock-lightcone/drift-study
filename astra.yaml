@@ -18,6 +18,9 @@ analyses:
   archive:
     url: https://github.com/tomcharnock-lightcone/sensor-archive
     commit: aaeeaae5fbb0e15e3a1954ed831f01542916f145
+  noise:
+    url: https://github.com/tomcharnock-lightcone/noise-models
+    commit: 6402027ef2b830d6caab22e9a1f03811d0c1871a
 
 decisions:
   reference_hours:
@@ -84,6 +87,38 @@ decisions:
           d = a + b·t + c·(T_ref − T̄_ref): a linear drift plus a bias
           proportional to the reference temperature.
 
+  drift_errors:
+    label: Drift uncertainty
+    rationale: >-
+      Two things scatter a sensor's daily difference from the reference: the
+      sensor's own noise, which noise-models measured in a climate chamber
+      (white plus 1/f), and the two sites answering the weather differently,
+      plus the reference's own noise. The residuals of the fit hold both,
+      but an AR(1) model of them has short memory and misses how 1/f noise
+      keeps wandering over months. The noise model has that memory but knows
+      nothing of the sites, and reaches a year only by extending a week-long
+      chamber run, at about 20 °C, three decades below its lowest fitted
+      frequency. Neither is complete, so all three are built.
+    options:
+      residual_ar1:
+        label: From the residuals
+        description: >-
+          Least-squares error scaled by the AR(1) effective sample size of
+          the residuals (Santer et al. 2000); Student-t interval.
+      noise_model:
+        label: From the sensor's noise model
+        description: >-
+          The variance of the fitted drift under the sensor's chamber noise
+          model (noise-models, Hann window), propagated through the daily
+          means and the fit's weights; Gaussian interval. Instrument noise
+          only.
+      combined:
+        label: Both added
+        description: >-
+          The two variances added, and the interval half-widths in
+          quadrature. The instrument's day-to-day noise is counted in both,
+          so this errs wide.
+
 outputs:
   reference_daily:
     label: Freiburg stations' daily means, 2023
@@ -137,17 +172,27 @@ outputs:
       error (c, under the temperature model only); residual_sd_c,
       residual_lag1_autocorr and n_effective; drift_ols_se_c_per_year, the
       unadjusted error, for comparison; n_days_used and the days excluded
-      for each reason. Uncertainties allow for autocorrelated residuals by
-      the effective sample size of an AR(1) process, n_e = n(1 − r₁)/(1 + r₁)
+      for each reason. The drift's error is given both ways in every table:
+      drift_se_residual_c_per_year, for autocorrelated residuals by the
+      effective sample size of an AR(1) process, n_e = n(1 − r₁)/(1 + r₁)
       (Santer et al. 2000, doi:10.1029/1999JD901105), with Student-t
-      intervals on n_e − k degrees of freedom. Newey–West errors were tried
+      intervals on n_e − k degrees of freedom (Newey–West errors were tried
       and rejected: on simulated AR(1) residuals as persistent as these,
-      their 95% intervals covered the true trend 80–90% of the time
-      (tests/test_drift_stats.py).
-    inputs: [differences]
-    decisions: [drift_model]
+      their 95% intervals covered the true trend 80–90% of the time,
+      tests/test_drift_stats.py); and drift_se_noise_model_c_per_year, from
+      the sensor's noise model (src/noise_propagation.py). drift_errors picks
+      which the quoted drift_se_c_per_year and interval use. Beside them,
+      noise_day_step_sd_c and observed_day_step_sd_c: the day-to-day change
+      of the daily difference the noise model predicts, and that of the
+      residuals, whose ratio is the share of the daily scatter the sensor's
+      own noise explains. Offset and temperature-coefficient errors are
+      always from the residuals.
+    inputs: [differences, noise.noise_models#hann]
+    decisions: [drift_model, drift_errors]
     recipe:
-      command: python src/fit_drift.py {inputs.differences} {decisions.drift_model} {output}
+      command: >-
+        python src/fit_drift.py {inputs.differences} {decisions.drift_model}
+        {decisions.drift_errors} {inputs.noise.noise_models#hann} {output}
 
   reference_check:
     label: Is the reference stable?
@@ -205,6 +250,17 @@ outputs:
         python src/plot_model_comparison.py {inputs.drift#baseline}
         {inputs.drift#temperature_term} {output}
 
+  error_comparison:
+    label: Drift error, residuals against noise model
+    type: figure
+    format: png
+    description: >-
+      Each sensor's drift standard error from its residuals and from its
+      noise model (baseline fit), sorted by their ratio.
+    inputs: [drift#baseline]
+    recipe:
+      command: python src/plot_errors.py {inputs.drift#baseline} {output}
+
   universe_comparison:
     label: What each alternative changes
     type: metric
@@ -213,23 +269,35 @@ outputs:
       For each alternative universe against the baseline: the largest and
       median change in drift over the sensors, the sensor that moves most,
       the largest change in units of the baseline's standard error, the
-      median drift, and how many sensors' 95% intervals exclude zero.
-    inputs: [drift#baseline, drift#temperature_term, drift#gap_filled_reference, drift#coverage_90]
+      median drift, the median ratio of the quoted drift error to the
+      baseline's, and how many sensors' 95% intervals exclude zero.
+    inputs:
+      - drift#baseline
+      - drift#temperature_term
+      - drift#gap_filled_reference
+      - drift#coverage_90
+      - drift#noise_model_errors
+      - drift#combined_errors
     recipe:
       command: >-
         python src/compare_universes.py {inputs.drift#baseline}
         temperature_term={inputs.drift#temperature_term}
         gap_filled_reference={inputs.drift#gap_filled_reference}
-        coverage_90={inputs.drift#coverage_90} {output}
+        coverage_90={inputs.drift#coverage_90}
+        noise_model_errors={inputs.drift#noise_model_errors}
+        combined_errors={inputs.drift#combined_errors} {output}
 
 universes:
   baseline:
     label: Baseline
-    description: Measured reference days, sensor-days at least 99% covered, drift linear in time.
+    description: >-
+      Measured reference days, sensor-days at least 99% covered, drift linear
+      in time, drift errors from the residuals.
     decisions:
       reference_hours: measured
       min_coverage: p99
       drift_model: time_only
+      drift_errors: residual_ar1
   temperature_term:
     label: With a temperature-dependent bias
     derived_from: baseline
@@ -245,6 +313,16 @@ universes:
     derived_from: baseline
     decisions:
       min_coverage: p90
+  noise_model_errors:
+    label: Drift errors from the sensors' noise models
+    derived_from: baseline
+    decisions:
+      drift_errors: noise_model
+  combined_errors:
+    label: Drift errors from residuals and noise models together
+    derived_from: baseline
+    decisions:
+      drift_errors: combined
 
 findings:
   sensors_drift_upward:
