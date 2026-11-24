@@ -16,7 +16,9 @@ it names, and the claims made from them are the `findings` of `astra.yaml`.
 the mean, minimum and maximum of the day's ten-second readings, how many there
 were, and how many despiking removed. They are read from GitHub at the commit
 `astra.yaml` declares (`analyses.archive`), so the result records exactly
-which summary it used; the raw readings are not needed.
+which summary it used; the raw readings are not needed. The archive's daily
+battery summary (`daily_battery`) gives each sensor's battery voltage per day,
+from which the battery swaps are found.
 
 **Reference.** Hourly air temperature of the Freiburg network, Plein, Christen
 & Dormann, *Street-level weather station network in Freiburg, Germany: Curated
@@ -123,6 +125,28 @@ cycle is not drift, but 2023 is not symmetric about mid-year, so part of it
 projects onto a straight line. With the reference temperature as a regressor
 the two are separated, provided the temperature dependence is linear and
 steady over the year.
+
+**Battery swaps and a robust fit.** Some sensors had their battery swapped
+during the year. Between swaps a battery's voltage only falls, so a day on
+which it rises is a swap (`src/battery_swaps.py`,
+`results/battery_swaps.csv`). A swap can shift a sensor's reading at once,
+and a line fitted through such a step reads it as drift. Under the decision
+`swap_steps`, the fit gets a free step at each swap, from the first day read
+wholly on the new battery, and the day of the swap, which mixes two
+batteries, is left out. Under `fit_method`, Huber's M-estimate replaces least
+squares: a day far from the line counts in proportion to its distance rather
+than its square, so a few outlying days cannot pull the fit
+(`src/drift_stats.py`; `tests/test_drift_stats.py` checks that it agrees
+with least squares on clean data, resists outliers, and keeps its intervals'
+coverage). The noise model is propagated through the fit's final weights.
+
+| Universe | Battery swaps | Fit |
+|---|---|---|
+| `battery_steps` | a step at each | least squares |
+| `huber_fit` | no allowance | Huber |
+| `robust` | a step at each | Huber |
+
+Every other choice is the baseline's.
 
 **Calibration first.** A drift is what changes in a sensor after it was set
 up, so the analysis also calibrates each sensor against FRPDAS over the start
@@ -245,6 +269,23 @@ days or lowering the coverage threshold leaves every drift within a fraction
 of its uncertainty (finding `screening_choices_immaterial`,
 `results/universe_comparison.json`).
 
+```{figure} results/robust_drift.png
+:label: fig-robust
+Each sensor's drift in the baseline and in the robust universe, with a step
+at each battery swap and Huber's fit. `results/robust/difference_series.png`
+shows the steps.
+```
+
+**Three sensors had a battery swap**, and their differences step there
+(finding `battery_swaps_found`). **The steps matter for those three**
+([](#fig-robust), finding `battery_steps_matter`): with a step at its swap,
+`s20`, which had the largest drift of all, drifts no more than most, and
+`s02` and `s34` drift less. **Outliers do not matter** (finding
+`outliers_immaterial`): the screening has already removed the bad days, and
+Huber's fit leaves every drift where it was. **The conclusion stands**
+(finding `robust_agrees`): with both, the sensors still drift upward as a
+group, and only the swapped sensors move.
+
 ```{figure} results/calibration_gains.png
 :label: fig-gains
 Each sensor's calibration gain against FRPDAS with its 95% interval, over
@@ -301,11 +342,12 @@ about a fifth. A month does nearly as well as three.
   that band cannot be told apart from where the sensor stands, unless it is
   known to be co-located with FRPDAS. This analysis does not know where the
   sensors are.
-- **A straight line is not always the right shape.** Some sensors' differences
-  jump rather than drift: `s20` steps up around mid-year and `s02` steps down
-  around March ([](#fig-series)), as a relocation, replacement or
-  recalibration would. Their fitted drift is a slope drawn through a step.
-  Others follow the seasons, which the temperature term absorbs.
+- **A straight line is not always the right shape.** The differences of
+  `s02`, `s20` and `s34` step at their battery swaps, which the baseline
+  draws a slope through and the robust universe allows for. `s20`'s is a
+  clean step; `s02`'s and `s34`'s jump at the swap and settle back over some
+  weeks ([](#fig-series)), which one step fits only roughly. Other sensors'
+  differences follow the seasons, which the temperature term absorbs.
 - **One year.** A linear drift and a seasonal effect are hard to separate
   within one annual cycle; the temperature term separates them only as far as
   its own assumptions hold. A second year of data would settle it.
@@ -317,7 +359,8 @@ about a fifth. A month does nearly as well as three.
 - **The calibration window is part of the year.** Its days are fitted twice,
   for the calibration and for the drift, and the two errors are treated as
   independent. Over three months the gain also absorbs some of the drift
-  that happens within the window, as the weather warms in March.
+  that happens within the window, as the weather warms in March, and `s02`'s
+  window holds its battery swap.
 - **Each half of the uncertainty rests on an assumption.** The residuals'
   part assumes AR(1) residuals, and is too narrow where they carry slower
   structure (a seasonal shape the model misses). The noise models' part

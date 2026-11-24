@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from drift_stats import fit_ar1, lag1_autocorr
+from drift_stats import fit_ar1, fit_huber, lag1_autocorr
 
 
 def ar1(rng, n, rho, sigma):
@@ -97,3 +97,38 @@ def test_gaps_in_days_are_handled():
     fit = fit_ar1(X, y, day)
     assert np.all(np.isfinite(fit.se))
     assert abs(fit.coef[1] + 0.3) < fit.ci95_half[1] * 2
+
+
+def test_huber_without_outliers_is_least_squares():
+    rng = np.random.default_rng(11)
+    day = np.arange(365)
+    X = design(day)
+    y = X @ [0.1, 0.4] + ar1(rng, 365, 0.6, 0.1)
+    ls, hu = fit_ar1(X, y, day), fit_huber(X, y, day)
+    # A few Gaussian residuals pass 1.345 σ and are down-weighted a little.
+    assert hu.coef[1] == pytest.approx(ls.coef[1], abs=0.2 * ls.se[1])
+    assert hu.se[1] == pytest.approx(ls.se[1], rel=0.1)
+
+
+def test_huber_is_not_pulled_by_outliers():
+    rng = np.random.default_rng(12)
+    day = np.arange(365)
+    X = design(day)
+    y = X @ [0.0, 0.5] + ar1(rng, 365, 0.5, 0.1)
+    y[340:345] += 3.0  # a few wild days near the end lever the slope
+    ls, hu = fit_ar1(X, y, day), fit_huber(X, y, day)
+    assert abs(ls.coef[1] - 0.5) > 3 * hu.se[1]
+    assert abs(hu.coef[1] - 0.5) < 2 * hu.se[1]
+    assert (hu.weights[340:345] < 0.1).all()
+
+
+def test_huber_intervals_cover_for_persistent_residuals():
+    rng = np.random.default_rng(13)
+    day = np.arange(365)
+    X = design(day)
+    hits = 0
+    for _ in range(300):
+        y = X @ [0.0, 0.3] + ar1(rng, 365, 0.7, 0.1)
+        f = fit_huber(X, y, day)
+        hits += abs(f.coef[1] - 0.3) <= f.ci95_half[1]
+    assert hits / 300 > 0.9

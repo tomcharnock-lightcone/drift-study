@@ -53,7 +53,8 @@ def run(tmp_path, t, window, model, drift_model="time_only"):
     calibrate.main(paths["raw"], paths["daily"], "FRPDAS", paths["noise"], window, model, paths["coef"])
     apply_calibration.main(paths["raw"], paths["coef"], paths["calibrated"])
     for source, out in (("raw", "drift_raw"), ("calibrated", "drift_cal")):
-        fit_drift.main(paths[source], drift_model, "combined", paths["noise"], paths[out])
+        fit_drift.main(paths[source], drift_model, "combined", paths["noise"], "least_squares",
+                       "none", "", paths[out])
     return (pd.read_csv(paths["coef"]).set_index("name"),
             pd.read_csv(paths["drift_raw"]).set_index("sensor"),
             pd.read_csv(paths["drift_cal"]).set_index("sensor"))
@@ -110,7 +111,7 @@ def test_the_calibration_error_is_the_drift_moved_by_the_gain(tmp_path):
     def drift(gain):
         moved = apply_calibration.calibrate(used, coef.reset_index().assign(
             gain=lambda f: np.where(f["name"] == "s01", gain, f["gain"])))
-        X, day = fit_drift.design(moved, "time_only")
+        X, day, _ = fit_drift.design(moved, "time_only")
         return fit_drift.slope_weights(X) @ moved["difference_c"].to_numpy()
 
     eps = 1e-6

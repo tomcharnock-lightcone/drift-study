@@ -15,6 +15,12 @@ freedom. Newey–West errors were tried first and rejected: on simulated AR(1)
 residuals as persistent as the sensors', their 95% intervals covered the true
 trend only 80–90% of the time, against 92–95% for this (tests/test_drift_stats.py
 repeats both).
+
+`fit_huber` is the same with Huber's M-estimate in place of least squares, for
+a fit that a few outlying days cannot pull: each residual beyond c = 1.345
+robust standard deviations counts in proportion to its size, not its square.
+Its errors are Huber's asymptotic ones with the same AR(1) effective sample
+size, and equal `fit_ar1`'s where no day is down-weighted.
 """
 
 from __future__ import annotations
@@ -36,6 +42,7 @@ class Fit:
     residuals: np.ndarray
     lag1_autocorr: float  # r₁ of the residuals, over pairs of consecutive days
     n_effective: float  # n (1 − r₁)/(1 + r₁), at most n
+    weights: np.ndarray | None = None  # each observation's weight in the fit; None for equal
 
 
 def lag1_autocorr(residuals: np.ndarray, day: np.ndarray) -> float:
@@ -91,3 +98,67 @@ def fit_ar1(X: np.ndarray, y: np.ndarray, day: np.ndarray) -> Fit:
         lag1_autocorr=r1,
         n_effective=float(n_eff),
     )
+
+
+HUBER_C = 1.345  # 95% efficient for Gaussian residuals
+
+
+def fit_huber(X: np.ndarray, y: np.ndarray, day: np.ndarray, c: float = HUBER_C,
+              max_iter: int = 200, tol: float = 1e-12) -> Fit:
+    """Huber's M-estimate of y on X, with uncertainties for AR(1) residuals.
+
+    Iteratively reweighted least squares, from the least-squares fit, with
+    the residuals' scale re-estimated at each step as their normalised
+    median absolute deviation σ. With z = e/σ and ψ(z) = clip(z, −c, c), the
+    coefficients' covariance is Huber's (1981),
+
+        K² σ² Σψ² / (n_e − k) / m² · (X'X)⁻¹,   m = mean ψ'(z),
+        K = 1 + (k/n)(1 − m)/m,
+
+    with n_e the AR(1) effective sample size of the winsorised residuals σψ
+    in place of n, and Student-t intervals on n_e − k degrees of freedom.
+    Where no residual is beyond c, ψ(z) = z and this is `fit_ar1`.
+    """
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y, dtype=float)
+    day = np.asarray(day, dtype=np.int64)
+    n, k = X.shape
+    if n <= k:
+        raise ValueError(f"{n} observations cannot fit {k} coefficients")
+    coef, *_ = np.linalg.lstsq(X, y, rcond=None)
+    w = np.ones(n)
+    for _ in range(max_iter):
+        e = y - X @ coef
+        sigma = 1.4826 * np.median(np.abs(e - np.median(e)))
+        if sigma == 0:
+            break
+        z = np.abs(e) / sigma
+        w = np.where(z <= c, 1.0, c / np.maximum(z, c))
+        sw = np.sqrt(w)
+        new, *_ = np.linalg.lstsq(X * sw[:, None], y * sw, rcond=None)
+        done = np.max(np.abs(new - coef)) <= tol * (1 + np.max(np.abs(coef)))
+        coef = new
+        if done:
+            break
+    e = y - X @ coef
+    sigma = 1.4826 * np.median(np.abs(e - np.median(e)))
+    bread = np.linalg.inv(X.T @ X)
+    if sigma == 0:
+        zero = np.zeros(k)
+        return Fit(coef=coef, se=zero, ols_se=zero, ci95_half=zero, residuals=e,
+                   lag1_autocorr=0.0, n_effective=float(n), weights=w)
+    psi = np.clip(e / sigma, -c, c)
+    m = float(np.mean(np.abs(e / sigma) <= c))
+    K = 1 + (k / n) * (1 - m) / m
+    scale = K**2 * sigma**2 * float(np.sum(psi**2)) / m**2
+
+    r1 = lag1_autocorr(sigma * psi, day)
+    n_eff = n * (1 - max(r1, 0.0)) / (1 + max(r1, 0.0))
+    ols_se = np.sqrt(scale / (n - k) * np.diag(bread))
+    if n_eff > k:
+        se = np.sqrt(scale / (n_eff - k) * np.diag(bread))
+        half = stats.t.ppf(0.975, n_eff - k) * se
+    else:
+        se = half = np.full(k, np.inf)
+    return Fit(coef=coef, se=se, ols_se=ols_se, ci95_half=half, residuals=e,
+               lag1_autocorr=r1, n_effective=float(n_eff), weights=w)

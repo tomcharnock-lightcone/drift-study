@@ -2,12 +2,13 @@
 with the days unfit to compare marked and why.
 
 usage: python src/differences.py SUMMARY.csv REFERENCE_DAILY.csv STATION
-           REFERENCE_HOURS MIN_COVERAGE OUT.csv
+           REFERENCE_HOURS MIN_COVERAGE BATTERY_SWAPS.csv SWAP_STEPS OUT.csv
 
 SUMMARY is sensor-archive's daily summary per sensor (date, sensor,
 n_readings, mean_c, min_c, max_c, std_c, n_removed); REFERENCE_DAILY the
-stations' daily means (src/reference_daily.py). REFERENCE_HOURS and
-MIN_COVERAGE are the options of the decisions of those names.
+stations' daily means (src/reference_daily.py); BATTERY_SWAPS the sensors'
+battery swaps (src/battery_swaps.py). REFERENCE_HOURS, MIN_COVERAGE and
+SWAP_STEPS are the options of the decisions of those names.
 
 A sensor-day is used unless, in this order of precedence:
 
@@ -21,7 +22,9 @@ A sensor-day is used unless, in this order of precedence:
   mean is biased by whichever part of the daily cycle is missing;
 - no_reference: the reference has no value that day;
 - reference_gap_filled: under `measured`, some of the reference's 24 hours
-  that day are gap-filled predictions rather than measurements.
+  that day are gap-filled predictions rather than measurements;
+- battery_swap: under `at_swaps`, the sensor's battery was swapped during
+  the day, so its mean mixes readings from two batteries.
 """
 
 from __future__ import annotations
@@ -34,6 +37,7 @@ import pandas as pd
 READINGS_PER_DAY = 8640  # one every 10 seconds
 MIN_COVERAGE = {"p99": 0.99, "p90": 0.90}
 REFERENCE_HOURS = ("measured", "gap_filled")
+SWAP_STEPS = ("none", "at_swaps")
 
 
 def screen(
@@ -41,6 +45,7 @@ def screen(
     reference: pd.DataFrame,
     reference_hours: str,
     min_coverage: float,
+    swap_days: frozenset[tuple[str, str]] = frozenset(),
 ) -> pd.DataFrame:
     """Join sensor-days to the reference and mark the ones not to use.
 
@@ -78,9 +83,12 @@ def screen(
     no_ref = m["reference_mean_c"].isna() | (m["n_hours"] < 24)
     gap_filled = (m["n_measured"] < 24) if reference_hours == "measured" else False
 
+    swapped = np.array([(k, d.strftime("%Y-%m-%d")) in swap_days
+                        for k, d in zip(m["sensor"], m["date"])], dtype=bool)
     reason = np.select(
-        [flat, adjacent, m["coverage"] < min_coverage, no_ref, gap_filled],
-        ["flatline", "flatline_adjacent", "low_coverage", "no_reference", "reference_gap_filled"],
+        [flat, adjacent, m["coverage"] < min_coverage, no_ref, gap_filled, swapped],
+        ["flatline", "flatline_adjacent", "low_coverage", "no_reference", "reference_gap_filled",
+         "battery_swap"],
         default="",
     )
     out = pd.DataFrame(
@@ -99,14 +107,23 @@ def screen(
     return out
 
 
-def main(summary, reference_daily, station, reference_hours, min_coverage, out) -> None:
+def main(summary, reference_daily, station, reference_hours, min_coverage, battery_swaps,
+         swap_steps, out) -> None:
     if min_coverage not in MIN_COVERAGE:
         raise ValueError(f"unknown min_coverage option {min_coverage!r}")
+    if swap_steps not in SWAP_STEPS:
+        raise ValueError(f"unknown swap_steps option {swap_steps!r}")
+    swap_days: frozenset[tuple[str, str]] = frozenset()
+    if swap_steps == "at_swaps":
+        sw = pd.read_csv(battery_swaps)
+        sw = sw[sw["mixed"]]
+        swap_days = frozenset(zip(sw["sensor"], sw["swap_date"]))
     ref = pd.read_csv(reference_daily)
     ref = ref[ref["station"] == station]
     if ref.empty:
         raise SystemExit(f"no station {station} in {reference_daily}")
-    table = screen(pd.read_csv(summary), ref, reference_hours, MIN_COVERAGE[min_coverage])
+    table = screen(pd.read_csv(summary), ref, reference_hours, MIN_COVERAGE[min_coverage],
+                   swap_days)
     table.to_csv(out, index=False, float_format="%.6f")
 
 

@@ -14,6 +14,9 @@ network.
   two weeks, one month and three months; what that changes,
   `results/calibration_comparison.json`. The calibration is an analysis of
   its own, in [`calibration/`](calibration/README.md), which this one drives.
+- The same with a free step at each battery swap and a fit robust to
+  outlying days, `results/robust/drift.csv`; what that changes,
+  `results/robust_comparison.json`.
 - Method, checks and caveats: [`index.md`](index.md). Specification:
   `astra.yaml`.
 
@@ -22,6 +25,8 @@ Inputs:
 - The sensors' despiked daily summaries, read from
   [sensor-archive](https://github.com/tomcharnock-lightcone/sensor-archive)
   at a fixed commit (`analyses.archive` in `astra.yaml`).
+- The sensors' daily battery voltage from sensor-archive (`daily_battery`),
+  to find battery swaps.
 - The sensors' noise models from
   [noise-models](https://github.com/tomcharnock-lightcone/noise-models)
   (`analyses.noise`), likewise at a fixed commit.

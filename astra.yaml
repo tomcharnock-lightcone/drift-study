@@ -14,12 +14,14 @@ description: >-
   show against each other over one year, is checked against the rest of the
   Freiburg network. Whether calibrating each sensor against FRPDAS over an
   initial window, with an offset or a gain and an offset, changes the drift
-  is checked with the calibration analysis in calibration/.
+  is checked with the calibration analysis in calibration/; and whether the
+  drift survives a step at each battery swap, found in the archive's daily
+  battery voltage, and a fit robust to outlying days.
 
 analyses:
   archive:
     url: https://github.com/tomcharnock-lightcone/sensor-archive
-    commit: aaeeaae5fbb0e15e3a1954ed831f01542916f145
+    commit: d6ded91f6ec7f890d597a549f2c9058cc24663b1
   noise:
     url: https://github.com/tomcharnock-lightcone/noise-models
     commit: 6402027ef2b830d6caab22e9a1f03811d0c1871a
@@ -124,6 +126,47 @@ decisions:
           quadrature. The instrument's day-to-day noise is counted in both,
           so this errs wide.
 
+  swap_steps:
+    label: Battery swaps
+    rationale: >-
+      Some sensors had their battery swapped during 2023, which the
+      archive's daily battery voltage shows: between swaps it only falls,
+      and at a swap it jumps back to a fresh battery's. A swap is an event,
+      not drift, yet the sensors' differences from the reference step at
+      their swaps, up or down, as handling a sensor or a different
+      battery's load can make them. A line fitted through a step reads it
+      as drift. A free step at each swap takes it out, at the cost of a
+      parameter, and of any real drift that came at the swap.
+    options:
+      none:
+        label: No allowance
+        description: One line through the whole year.
+      at_swaps:
+        label: A step at each swap
+        description: >-
+          A free step in the difference at each battery swap, from the first
+          day read wholly on the new battery; the day of a swap within the
+          day, whose mean mixes two batteries, is not used.
+
+  fit_method:
+    label: Fit
+    rationale: >-
+      Least squares lets a few days far from the line pull it, the more so
+      the nearer they are to the year's ends. The screening removes the days
+      known to be bad (stuck readings, partial days); a robust fit guards
+      against those it cannot name.
+    options:
+      least_squares:
+        label: Least squares
+        description: Every used day counts by the square of its residual.
+      huber:
+        label: Huber's M-estimate
+        description: >-
+          A day more than 1.345 robust standard deviations from the fit
+          counts in proportion to its distance rather than its square
+          (src/drift_stats.py); errors from Huber's asymptotic covariance,
+          with the same AR(1) effective sample size.
+
   calibrate:
     label: Calibration before the fit
     rationale: >-
@@ -166,6 +209,20 @@ outputs:
         https://zenodo.org/api/records/21307957/files/ta_vp_rh_60_min_2022_09_01_2024_08_31_gap_filled.csv/content
         093ef1695526841b2ea5e66d800ca42e 2023 {output}
 
+  battery_swaps:
+    label: Battery swaps
+    type: table
+    format: csv
+    description: >-
+      One row per battery swap, a day on which sensor-archive's daily
+      battery summary shows the voltage rising (between swaps it only
+      falls): sensor, swap_date, v_before_v and v_after_v (the voltage
+      either side), mixed (readings from both batteries share the day) and
+      first_new_date (the first day read wholly on the new battery).
+    inputs: [archive.daily_battery]
+    recipe:
+      command: python src/battery_swaps.py {inputs.archive.daily_battery} {output}
+
   differences:
     label: Sensor minus reference, per day
     type: table
@@ -178,14 +235,16 @@ outputs:
       by precedence: flatline (every reading the same value, a stuck sensor),
       flatline_adjacent (the day before or after one, which the summary
       cannot tell how much of was stuck), low_coverage, no_reference,
-      reference_gap_filled.
-    inputs: [archive.daily_summary#despiked, reference_daily]
-    decisions: [reference_hours, min_coverage]
+      reference_gap_filled, and battery_swap (under swap_steps at_swaps, a
+      day the sensor's battery was swapped within).
+    inputs: [archive.daily_summary#despiked, reference_daily, battery_swaps]
+    decisions: [reference_hours, min_coverage, swap_steps]
     recipe:
       command: >-
         python src/differences.py {inputs.archive.daily_summary#despiked}
         {inputs.reference_daily} FRPDAS {decisions.reference_hours}
-        {decisions.min_coverage} {output}
+        {decisions.min_coverage} {inputs.battery_swaps}
+        {decisions.swap_steps} {output}
 
   fit_input:
     switch: calibrate
@@ -224,18 +283,24 @@ outputs:
       calibration_gain_se and drift_se_calibration_c_per_year, how far the
       gain's uncertainty moves the drift, which is added in quadrature to
       the quoted error and interval; the noise model's error is then divided
-      by the gain, as the noise in a calibrated reading is. Beside them,
+      by the gain, as the noise in a calibrated reading is. Under
+      swap_steps at_swaps the fit has a free step at each battery swap and
+      the table adds n_battery_swaps, battery_step_dates, battery_steps_c
+      and battery_steps_se_c; under fit_method huber the fit is Huber's and
+      the table adds n_days_downweighted. Beside them,
       noise_day_step_sd_c and observed_day_step_sd_c: the day-to-day change
       of the daily difference the noise model predicts, and that of the
       residuals, whose ratio is the share of the daily scatter the sensor's
       own noise explains. Offset and temperature-coefficient errors are
       always from the residuals.
-    inputs: [fit_input, noise.noise_models#hann]
-    decisions: [drift_model, drift_errors]
+    inputs: [fit_input, noise.noise_models#hann, battery_swaps]
+    decisions: [drift_model, drift_errors, fit_method, swap_steps]
     recipe:
       command: >-
         python src/fit_drift.py {inputs.fit_input} {decisions.drift_model}
-        {decisions.drift_errors} {inputs.noise.noise_models#hann} {output}
+        {decisions.drift_errors} {inputs.noise.noise_models#hann}
+        {decisions.fit_method} {decisions.swap_steps} {inputs.battery_swaps}
+        {output}
 
   reference_check:
     label: Is the reference stable?
@@ -410,18 +475,57 @@ outputs:
         three_months={inputs.drift#gain_three_months}
         {output}
 
+  robust_comparison:
+    label: What battery steps and a robust fit change
+    type: metric
+    format: json
+    description: >-
+      The battery swaps found; and for a step at each swap (battery_steps),
+      Huber's fit (huber_fit) and both (robust), against the baseline: how
+      far the drifts move (as in universe_comparison); for each sensor with
+      a step, its drift with and without it and the step with its error;
+      and how many days Huber's fit down-weighted.
+    inputs:
+      - drift#baseline
+      - battery_swaps
+      - drift#battery_steps
+      - drift#huber_fit
+      - drift#robust
+    recipe:
+      command: >-
+        python src/compare_robust.py {inputs.drift#baseline}
+        {inputs.battery_swaps} battery_steps={inputs.drift#battery_steps}
+        huber_fit={inputs.drift#huber_fit} robust={inputs.drift#robust}
+        {output}
+
+  robust_drift:
+    label: Drift, baseline and robust
+    type: figure
+    format: png
+    description: >-
+      Each sensor's drift and 95% interval in the baseline and in the robust
+      universe (a step at each battery swap, Huber's fit), side by side.
+    inputs: [drift#baseline, drift#robust]
+    recipe:
+      command: >-
+        python src/plot_model_comparison.py {inputs.drift#baseline}
+        {inputs.drift#robust} {output} baseline robust
+        "How battery steps and a robust fit move the drift"
+
 universes:
   baseline:
     label: Baseline
     description: >-
       Measured reference days, sensor-days at least 99% covered, drift linear
       in time, drift errors from the residuals and the noise models together,
-      no calibration.
+      least squares with no allowance for battery swaps, no calibration.
     decisions:
       reference_hours: measured
       min_coverage: p99
       drift_model: time_only
       drift_errors: combined
+      swap_steps: none
+      fit_method: least_squares
       calibrate: none
   temperature_term:
     label: With a temperature-dependent bias
@@ -448,6 +552,25 @@ universes:
     derived_from: baseline
     decisions:
       drift_errors: residual_ar1
+  battery_steps:
+    label: A step at each battery swap
+    derived_from: baseline
+    decisions:
+      swap_steps: at_swaps
+  huber_fit:
+    label: Huber's robust fit
+    derived_from: baseline
+    decisions:
+      fit_method: huber
+  robust:
+    label: Robust
+    description: >-
+      The baseline with a free step at each battery swap and Huber's robust
+      fit.
+    derived_from: baseline
+    decisions:
+      swap_steps: at_swaps
+      fit_method: huber
   offset_two_weeks:
     label: Calibrated over two weeks, offset only
     derived_from: baseline
@@ -677,3 +800,71 @@ findings:
         quote: { exact: '"median_drift_se_calibration_c_per_year": 0.0654' }
       - artifact: calibration_comparison
         quote: { exact: '"median_abs_drift_change_c_per_year": 0.1267' }
+
+  battery_swaps_found:
+    claim: >-
+      The archive's battery voltage shows three battery swaps in 2023: s02
+      on 2 March, s20 on 9 June and s34 on 14 September, each in the course
+      of the day. They are where those sensors' differences from FRPDAS
+      step.
+    evidence:
+      - artifact: robust_comparison
+        quote: { exact: '"n_swaps": 3' }
+      - artifact: robust_comparison
+        quote: { exact: '"dates": "s02:2023-03-02;s20:2023-06-09;s34:2023-09-14"' }
+
+  battery_steps_matter:
+    claim: >-
+      A step at each battery swap changes the drift of the three swapped
+      sensors and of no other. s20's falls from +1.75 to +0.21 °C per year,
+      its swap having stepped its difference by +1.04 °C: the largest drift
+      in the network was a battery swap. s02's goes from −0.66 to −0.40 and
+      s34's from +0.78 to +0.47 °C per year. The network's median drift
+      falls from +0.42 to +0.39 °C per year, and 22 of the 40 sensors drift
+      significantly, against 24.
+    evidence:
+      - artifact: robust_comparison
+        quote: { exact: '"s20_baseline_drift_c_per_year": 1.7471' }
+      - artifact: robust_comparison
+        quote: { exact: '"s20_drift_c_per_year": 0.2136' }
+      - artifact: robust_comparison
+        quote: { exact: '"s20_steps_c": "1.0407"' }
+      - artifact: robust_comparison
+        quote: { exact: '"s02_drift_c_per_year": -0.4008' }
+      - artifact: robust_comparison
+        quote: { exact: '"s34_drift_c_per_year": 0.4716' }
+      - artifact: robust_comparison
+        quote: { exact: '"median_abs_drift_change_c_per_year": 0.0,' }
+      - artifact: robust_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.3897' }
+      - artifact: robust_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 22' }
+
+  outliers_immaterial:
+    claim: >-
+      Outlying days do not drive the drifts. Huber's robust fit moves no
+      sensor's drift by more than 0.044 °C per year, 0.28 of its standard
+      error, and down-weights 14.5% of the days fitted, fewer than the 18%
+      it would for Gaussian residuals: after the screening, the residuals
+      have no heavy tail.
+    evidence:
+      - artifact: robust_comparison
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0444' }
+      - artifact: robust_comparison
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 0.276' }
+      - artifact: robust_comparison
+        quote: { exact: '"share_days_downweighted": 0.145' }
+
+  robust_agrees:
+    claim: >-
+      With a step at each battery swap and Huber's fit together, the
+      sensors still drift upward as a group: a median of +0.39 °C per year,
+      and 23 of the 40 significantly. Only the three swapped sensors' drifts
+      move by more than 0.04 °C per year.
+    evidence:
+      - artifact: robust_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.3925' }
+      - artifact: robust_comparison
+        quote: { exact: '"max_abs_drift_change_unstepped_c_per_year": 0.033' }
+      - artifact: robust_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 23' }

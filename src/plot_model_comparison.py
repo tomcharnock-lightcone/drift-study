@@ -1,9 +1,11 @@
 """Each sensor's drift with and without the temperature term, side by side.
 
 usage: python src/plot_model_comparison.py TIME_ONLY.csv WITH_TEMPERATURE.csv OUT.png
+           [LABEL_A LABEL_B TITLE]
 
-Sensors sorted by the time-only drift; each pair of intervals is offset
-vertically so both stay visible.
+Sensors sorted by the first table's drift; each pair of intervals is offset
+vertically so both stay visible. Any two drift tables can be set side by
+side this way, with their labels and the figure's title given.
 """
 
 from __future__ import annotations
@@ -18,7 +20,10 @@ import plot_style
 plt = plot_style.plt
 
 
-def main(time_only: str, with_temperature: str, out: str) -> None:
+def main(time_only: str, with_temperature: str, out: str, label_a: str = "time only",
+         label_b: str = "time and temperature",
+         title: str = "How a temperature-dependent bias moves the drift") -> None:
+    legend_title = "drift model" if label_a == "time only" else None
     plot_style.apply()
     a = pd.read_csv(time_only).set_index("sensor")
     b = pd.read_csv(with_temperature).set_index("sensor")
@@ -26,8 +31,8 @@ def main(time_only: str, with_temperature: str, out: str) -> None:
     y = np.arange(len(order))
     fig, ax = plt.subplots(figsize=(6.5, 9))
     ax.axvline(0, color=plot_style.INK_2, lw=0.8, zorder=1)
-    for table, colour, dy, label in [(a, plot_style.SERIES[0], 0.17, "time only"),
-                                     (b, plot_style.SERIES[1], -0.17, "time and temperature")]:
+    for table, colour, dy, label in [(a, plot_style.SERIES[0], 0.17, label_a),
+                                     (b, plot_style.SERIES[1], -0.17, label_b)]:
         t = table.loc[order]
         ax.hlines(y + dy, t["drift_ci95_low_c_per_year"], t["drift_ci95_high_c_per_year"],
                   color=colour, lw=2, zorder=2)
@@ -37,8 +42,8 @@ def main(time_only: str, with_temperature: str, out: str) -> None:
     ax.set_ylim(-1, len(order))
     ax.grid(axis="y", visible=False)
     ax.set_xlabel("drift against the reference (°C per year), with 95% interval")
-    ax.legend(loc="lower right", title="drift model", title_fontsize=8, fontsize=8)
-    ax.set_title("How a temperature-dependent bias moves the drift", loc="left")
+    ax.legend(loc="lower right", title=legend_title, title_fontsize=8, fontsize=8)
+    ax.set_title(title, loc="left")
     fig.tight_layout()
     fig.savefig(out, dpi=150)
 

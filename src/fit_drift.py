@@ -1,6 +1,7 @@
 """A linear drift per sensor, fitted to its daily difference from the reference.
 
-usage: python src/fit_drift.py DIFFERENCES.csv DRIFT_MODEL DRIFT_ERRORS NOISE_MODELS.csv OUT.csv
+usage: python src/fit_drift.py DIFFERENCES.csv DRIFT_MODEL DRIFT_ERRORS NOISE_MODELS.csv
+           FIT_METHOD SWAP_STEPS BATTERY_SWAPS.csv OUT.csv
 
 DIFFERENCES is src/differences.py's table; only its used days are fitted.
 DRIFT_MODEL is the option of the decision of that name:
@@ -28,6 +29,20 @@ DRIFT_ERRORS (the decision of that name) picks the one the quoted error and
 
 The offset's and temperature coefficient's errors are always residual_ar1.
 
+FIT_METHOD (the decision of that name) is least_squares, or huber for
+Huber's M-estimate (src/drift_stats.py), which down-weights days far from
+the fit (n_days_downweighted); its residual errors are Huber's, and the
+noise model is propagated through the fit's final weights.
+
+SWAP_STEPS (the decision of that name) is none, or at_swaps for a free step
+in the difference at each of the sensor's battery swaps (BATTERY_SWAPS,
+src/battery_swaps.py), from the first day read wholly on the new battery:
+d = a + b·t + Σ_k δ_k·[date ≥ first_new_date_k], with a the difference at
+mid-year before any swap. A swap with no used day on one side of it is
+left out. The table then gives n_battery_swaps, battery_step_dates and
+battery_steps_c (δ_k) with battery_steps_se_c, one per step, separated by
+`;`, and the days excluded as battery_swap.
+
 DIFFERENCES can be calibration/src/apply_calibration.py's table instead,
 each sensor's readings calibrated, s' = (s − o)/g. Then the drift carries
 the gain's uncertainty too: the slope of the calibrated difference is
@@ -47,7 +62,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from drift_stats import fit_ar1
+from drift_stats import fit_ar1, fit_huber
 from noise_propagation import day_step_var, weighted_daily_mean_var
 
 MID_YEAR = pd.Timestamp("2023-07-02")
@@ -55,25 +70,41 @@ DAYS_PER_YEAR = 365.25
 MODELS = ("time_only", "time_and_temperature")
 ERRORS = ("residual_ar1", "noise_model", "combined")
 REASONS = ("flatline", "flatline_adjacent", "low_coverage", "no_reference", "reference_gap_filled")
+FIT_METHODS = ("least_squares", "huber")
+SWAP_STEPS = ("none", "at_swaps")
 
 
-def design(days: pd.DataFrame, model: str) -> tuple[np.ndarray, np.ndarray]:
-    """The design matrix of a sensor's days, and each day's offset from mid-year."""
-    day = ((pd.to_datetime(days["date"]) - MID_YEAR).dt.days).to_numpy()
+def design(days: pd.DataFrame, model: str, steps: tuple[str, ...] = ()
+           ) -> tuple[np.ndarray, np.ndarray, list[str]]:
+    """The design matrix of a sensor's days, each day's offset from mid-year,
+    and the columns' names: offset, drift, then temperature and a step per
+    date in `steps` (from that day on) that has days on both sides."""
+    date = pd.to_datetime(days["date"])
+    day = ((date - MID_YEAR).dt.days).to_numpy()
     t = day / DAYS_PER_YEAR
-    columns = [np.ones_like(t), t]
+    columns, names = [np.ones_like(t), t], ["offset", "drift"]
     if model == "time_and_temperature":
         ref = days["reference_mean_c"].to_numpy()
         columns.append(ref - ref.mean())
-    return np.column_stack(columns), day
+        names.append("temperature")
+    for step in steps:
+        after = (date >= pd.Timestamp(step)).to_numpy()
+        if after.any() and not after.all():
+            columns.append(after.astype(float))
+            names.append(f"step:{step}")
+    return np.column_stack(columns), day, names
 
 
-def fit_sensor(days: pd.DataFrame, model: str) -> dict:
+def fit_sensor(days: pd.DataFrame, model: str, method: str = "least_squares",
+               steps: tuple[str, ...] = ()) -> dict:
     """Fit one series' days; its row of the drift table, residual errors only."""
-    X, day = design(days, model)
-    fit = fit_ar1(X, days["difference_c"].to_numpy(), day)
+    X, day, names = design(days, model, steps)
+    fitter = fit_huber if method == "huber" else fit_ar1
+    fit = fitter(X, days["difference_c"].to_numpy(), day)
     date = pd.to_datetime(days["date"])
-    return {
+    temp = names.index("temperature") if "temperature" in names else None
+    stepped = [i for i, name in enumerate(names) if name.startswith("step:")]
+    row = {
         "n_days_used": len(days),
         "first_date": date.min().strftime("%Y-%m-%d"),
         "last_date": date.max().strftime("%Y-%m-%d"),
@@ -85,8 +116,8 @@ def fit_sensor(days: pd.DataFrame, model: str) -> dict:
         "drift_ols_se_c_per_year": fit.ols_se[1],
         "offset_c": fit.coef[0],
         "offset_se_c": fit.se[0],
-        "temp_coef_c_per_c": fit.coef[2] if len(fit.coef) > 2 else np.nan,
-        "temp_coef_se_c_per_c": fit.se[2] if len(fit.coef) > 2 else np.nan,
+        "temp_coef_c_per_c": fit.coef[temp] if temp is not None else np.nan,
+        "temp_coef_se_c_per_c": fit.se[temp] if temp is not None else np.nan,
         "residual_sd_c": float(np.std(fit.residuals, ddof=len(fit.coef))),
         "residual_lag1_autocorr": fit.lag1_autocorr,
         "n_effective": fit.n_effective,
@@ -94,19 +125,27 @@ def fit_sensor(days: pd.DataFrame, model: str) -> dict:
         "_residuals": fit.residuals,
         "_day": day,
         "_X": X,
+        "_w": fit.weights,
+        "_steps": [(names[i].removeprefix("step:"), fit.coef[i], fit.se[i]) for i in stepped],
     }
+    if method == "huber":
+        row["_downweighted"] = int((fit.weights < 1).sum())
+    return row
 
 
-def slope_weights(X: np.ndarray) -> np.ndarray:
-    """w with b = Σ w_j d_j: the slope's row of the least-squares solution."""
-    return np.linalg.solve(X.T @ X, X.T)[1]
+def slope_weights(X: np.ndarray, weights: np.ndarray | None = None) -> np.ndarray:
+    """w with b = Σ w_j d_j: the slope's row of the (weighted) least-squares solution."""
+    if weights is None:
+        return np.linalg.solve(X.T @ X, X.T)[1]
+    XtW = X.T * weights
+    return np.linalg.solve(XtW @ X, XtW)[1]
 
 
 def noise_columns(row: dict, noise: pd.Series) -> dict:
     """The drift's error from the sensor's noise model, and how much of the
     residuals' day-to-day scatter that noise explains."""
     X, day, e = row["_X"], row["_day"], row["_residuals"]
-    w = slope_weights(X)
+    w = slope_weights(X, row["_w"])
     args = (noise["sigma_white_c"], noise["f_knee_hz"], noise["alpha"], noise["fs_hz"])
     order = np.argsort(day)
     consecutive = np.diff(day[order]) == 1
@@ -121,7 +160,7 @@ def calibration_columns(row: dict, used: pd.DataFrame) -> dict:
     """For calibrated readings: the drift's error from the calibration's gain,
     and the noise model's error scaled to calibrated readings."""
     g, g_se, o = (float(used[c].iloc[0]) for c in ("gain", "gain_se", "offset_c"))
-    s = slope_weights(row["_X"]) @ (used["raw_sensor_mean_c"].to_numpy() - o)
+    s = slope_weights(row["_X"], row["_w"]) @ (used["raw_sensor_mean_c"].to_numpy() - o)
     return {
         "drift_se_noise_model_c_per_year": row["drift_se_noise_model_c_per_year"] / g,
         "noise_day_step_sd_c": row["noise_day_step_sd_c"] / g,
@@ -150,27 +189,52 @@ def choose_errors(row: dict, errors: str) -> None:
     row["drift_ci95_high_c_per_year"] = b + half
 
 
-def main(differences: str, model: str, errors: str, noise_models: str, out: str) -> None:
+def step_columns(row: dict) -> dict:
+    steps = row["_steps"]
+    return {
+        "n_battery_swaps": len(steps),
+        "battery_step_dates": ";".join(d for d, _, _ in steps),
+        "battery_steps_c": ";".join(f"{c:.4f}" for _, c, _ in steps),
+        "battery_steps_se_c": ";".join(f"{se:.4f}" for _, _, se in steps),
+    }
+
+
+def main(differences: str, model: str, errors: str, noise_models: str, fit_method: str,
+         swap_steps: str, battery_swaps: str, out: str) -> None:
     if model not in MODELS:
         raise ValueError(f"unknown drift_model option {model!r}")
     if errors not in ERRORS:
         raise ValueError(f"unknown drift_errors option {errors!r}")
+    if fit_method not in FIT_METHODS:
+        raise ValueError(f"unknown fit_method option {fit_method!r}")
+    if swap_steps not in SWAP_STEPS:
+        raise ValueError(f"unknown swap_steps option {swap_steps!r}")
     table = pd.read_csv(differences, keep_default_na=False, na_values=[""])
     table["excluded_reason"] = table["excluded_reason"].fillna("")
     noise = pd.read_csv(noise_models).set_index("sensor")
     calibrated = "gain" in table.columns
+    stepping = swap_steps == "at_swaps"
+    steps: dict[str, tuple[str, ...]] = {}
+    if stepping:
+        sw = pd.read_csv(battery_swaps).dropna(subset=["first_new_date"])
+        steps = {k: tuple(g["first_new_date"]) for k, g in sw.groupby("sensor")}
+    reasons = REASONS + (("battery_swap",) if stepping else ())
     rows = []
     for sensor, days in table.groupby("sensor", sort=True):
         if sensor not in noise.index:
             raise SystemExit(f"no noise model for {sensor} in {noise_models}")
         used = days[days["used"]]
-        row = {"sensor": sensor, **fit_sensor(used, model)}
+        row = {"sensor": sensor, **fit_sensor(used, model, fit_method, steps.get(sensor, ()))}
         row.update(noise_columns(row, noise.loc[sensor]))
         if calibrated:
             row.update(calibration_columns(row, used))
+        if stepping:
+            row.update(step_columns(row))
+        if fit_method == "huber":
+            row["n_days_downweighted"] = row["_downweighted"]
         choose_errors(row, errors)
         counts = days["excluded_reason"].value_counts()
-        for reason in REASONS:
+        for reason in reasons:
             row[f"n_excluded_{reason}"] = int(counts.get(reason, 0))
         rows.append({k: v for k, v in row.items() if not k.startswith("_")})
     pd.DataFrame(rows).to_csv(out, index=False, float_format="%.6g")
