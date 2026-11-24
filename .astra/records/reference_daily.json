@@ -1,0 +1,19 @@
+{
+  "address": "reference_daily",
+  "content_hash": "sha256:576589e6799d8b854ed16012e943f273d23a8412afc041ed8a91dac02e011fd7",
+  "generated_by": {
+    "commit": "5aafb4b64f724ff6f3fbbee6bf08e870cdc0b627",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T10:09:33.498Z",
+    "inputs": [],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T10:09:26.527Z"
+  },
+  "size": 530739,
+  "spec_version": "0.1.0"
+}
