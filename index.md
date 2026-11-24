@@ -124,6 +124,49 @@ projects onto a straight line. With the reference temperature as a regressor
 the two are separated, provided the temperature dependence is linear and
 steady over the year.
 
+**Calibration first.** A drift is what changes in a sensor after it was set
+up, so the analysis also calibrates each sensor against FRPDAS over the start
+of its record and fits the drift to the calibrated readings. The calibration
+is an analysis of its own, in `calibration/` (`calibration/astra.yaml`),
+which this one drives and which can be reused. Over the window it fits the
+sensor's daily means on the days the study uses, as
+
+$$
+s = g\,r + o \qquad\text{or}\qquad s = r + o,
+$$
+
+with $s$ the sensor's daily mean and $r$ the reference's: a gain $g$ and an
+offset $o$, or an offset alone. Each reading of the year then becomes
+$(s - o)/g$ (`calibration.calibrated.csv`), and the drift is fitted to the
+calibrated difference exactly as before. The gain's error adds the residuals'
+(AR(1)) and the noise model's, as the drift's does, and is carried into the
+drift's error: the drift moves with the gain as
+$\partial b/\partial g = -\sum_j w_j (s_j - o)/g^2$, with $w$ the fit's
+weights (`drift_se_calibration_c_per_year` in `drift.csv`; checked against a
+numerical derivative in `tests/test_calibration.py`). An offset alone cannot
+move a drift that is fitted with an offset of its own, and is built
+anyway, as the check and for its calibrated readings.
+
+A gain against a station elsewhere is not only the sensor's: two sites that
+answer the weather differently, one with a wider daily and seasonal swing
+than the other, show a gain between them. So `calibration/src/calibrate.py`
+calibrates Freiburg's other stations against FRPDAS the same way, over the
+same window (`calibration.coefficients.csv`, `kind = station`), as what siting
+alone puts into a gain.
+
+| Universe | Window | Calibration |
+|---|---|---|
+| `offset_two_weeks` | 1–14 January | offset |
+| `offset_one_month` | January | offset |
+| `offset_three_months` | January to March | offset |
+| `gain_two_weeks` | 1–14 January | gain and offset |
+| `gain_one_month` | January | gain and offset |
+| `gain_three_months` | January to March | gain and offset |
+
+Every other choice is the baseline's. A longer window has more days and a
+wider range of temperatures to fit a gain to, but more of the year's drift
+happens inside it.
+
 **Is the reference stable?** A drift of FRPDAS would appear, reversed, in
 every sensor. `src/reference_check.py` fits FRPDAS against the median of the
 network's other stations, and fits each of those stations against FRPDAS
@@ -202,6 +245,53 @@ days or lowering the coverage threshold leaves every drift within a fraction
 of its uncertainty (finding `screening_choices_immaterial`,
 `results/universe_comparison.json`).
 
+```{figure} results/calibration_gains.png
+:label: fig-gains
+Each sensor's calibration gain against FRPDAS with its 95% interval, over
+each window. The grey band is the 5th–95th percentile of the gains of
+Freiburg's other stations against FRPDAS over the same window.
+```
+
+```{figure} results/calibration_drift.png
+:label: fig-calibration
+Each sensor's drift uncalibrated (baseline) and calibrated with a gain and an
+offset over each window.
+```
+
+**Calibrating an offset changes nothing** (finding
+`offset_calibration_changes_nothing`): the drift fit has an offset of its
+own, so a constant correction moves only that.
+
+**Many sensors have a gain** ([](#fig-gains), finding `sensors_have_gains`),
+and it is not an accident of the window: a sensor's gain over January
+follows the temperature coefficient fitted to its whole year closely, and
+calibrating it out shrinks the residual scatter over the rest of the year.
+Over three months, the five largest gains (`s22`, `s23`, `s07`, `s11`,
+`s06`) belong to the five sensors with the largest temperature coefficients
+over the year, and the smallest (`s21`, `s28`, `s33`) to sensors with some of
+the most negative: the sensors whose differences follow the seasons
+([](#fig-series)).
+
+**Part of a gain is the site** (finding `gains_not_only_the_sensors`).
+Freiburg's maintained stations, calibrated against FRPDAS over January, show
+gains spread as widely as the sensors'; over three months the stations'
+narrow while the sensors' barely do. So some sensors have a gain beyond what
+siting gives, but which ones cannot be said without knowing where they
+stand.
+
+**A gain calibration moves the drift as much as the temperature term
+does** ([](#fig-calibration), finding `gain_calibration_moves_drift`), and
+in the same direction: the seasonal pattern a gain causes is what the
+temperature term absorbs, fitted from January instead of from the whole
+year. The network's median drift falls by about a sixth. Calibrated over
+January, `s11`, `s12` and `s23` no longer drift significantly, and `s22` and
+`s28`, whose seasonal cycle had widened their intervals, now do.
+
+**Two weeks is too short for a gain** (finding `calibration_window`): the
+first fortnight of 2023 was mild, with little range in temperature, so its
+gains are uncertain, and carried into the drift they widen its interval by
+about a fifth. A month does nearly as well as three.
+
 ## Caveats
 
 - **A drift against one station is not the sensor's alone.** It includes how
@@ -219,6 +309,15 @@ of its uncertainty (finding `screening_choices_immaterial`,
 - **One year.** A linear drift and a seasonal effect are hard to separate
   within one annual cycle; the temperature term separates them only as far as
   its own assumptions hold. A second year of data would settle it.
+- **A calibration against one station includes the site.** A gain or offset
+  fitted against FRPDAS is the sensor's and its site's together; Freiburg's
+  own stations show gains of similar size against FRPDAS ([](#fig-gains)).
+  Calibrating removes both, which is right for tracking a sensor against
+  this reference and wrong for correcting its readings anywhere else.
+- **The calibration window is part of the year.** Its days are fitted twice,
+  for the calibration and for the drift, and the two errors are treated as
+  independent. Over three months the gain also absorbs some of the drift
+  that happens within the window, as the weather warms in March.
 - **Each half of the uncertainty rests on an assumption.** The residuals'
   part assumes AR(1) residuals, and is too narrow where they carry slower
   structure (a seasonal shape the model misses). The noise models' part

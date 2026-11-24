@@ -575,3 +575,105 @@ findings:
         quote: { exact: '"n_sensors_ci95_excluding_zero": 34' }
       - artifact: universe_comparison
         quote: { exact: '"n_sensors_ci95_excluding_zero": 30' }
+
+  offset_calibration_changes_nothing:
+    claim: >-
+      Calibrating each sensor's offset alone, over any of the three windows,
+      changes no sensor's drift: a drift fitted with an offset of its own
+      cannot see a constant correction.
+    evidence:
+      - artifact: calibration_comparison
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.0,' }
+
+  sensors_have_gains:
+    claim: >-
+      Many sensors follow the reference's temperature with a gain other than
+      1: calibrated over January, 18 of the 40 have a gain whose 95%
+      interval excludes 1, and their gains run from 0.96 to 1.05 (5th–95th
+      percentile). The gain is not an accident of the window: over the
+      sensors it correlates at 0.91 with the temperature coefficient fitted
+      to the whole year, and calibrating it out shrinks the median sensor's
+      residual scatter over the year by a sixth.
+    evidence:
+      - artifact: calibration_comparison
+        quote: { exact: '"n_sensors_gain_ci95_excluding_one": 18' }
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_gain_p05": 0.9629' }
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_gain_p95": 1.054' }
+      - artifact: calibration_comparison
+        quote: { exact: '"gain_vs_temperature_coefficient_corr": 0.906' }
+      - artifact: calibration_comparison
+        quote: { exact: '"median_residual_sd_ratio_to_baseline": 0.839' }
+
+  gains_not_only_the_sensors:
+    claim: >-
+      Part of a sensor's gain against FRPDAS is its site. Calibrated against
+      FRPDAS over January, Freiburg's other, maintained stations show gains
+      as widely spread as the sensors' (standard deviation 0.031 against
+      0.030). Over three months the stations' spread narrows to 0.020 while
+      the sensors' stays at 0.027, and 20 of the 40 sensors' gains differ
+      from 1 against 5 of the 39 stations': some sensors have a gain beyond
+      what siting gives.
+    evidence:
+      - artifact: calibration_comparison
+        quote: { exact: '"station_gain_sd": 0.0311' }
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_gain_sd": 0.0296' }
+      - artifact: calibration_comparison
+        quote: { exact: '"station_gain_sd": 0.0195' }
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_gain_sd": 0.0272' }
+      - artifact: calibration_comparison
+        quote: { exact: '"n_sensors_gain_ci95_excluding_one": 20' }
+      - artifact: calibration_comparison
+        quote: { exact: '"n_stations_gain_ci95_excluding_one": 5' }
+
+  gain_calibration_moves_drift:
+    claim: >-
+      Calibrating a gain and an offset over January moves the sensors'
+      drifts by a median of 0.13 °C per year and by up to 0.43 °C per year
+      (s23), 1.8 of the baseline's standard error, and lowers the median
+      drift from +0.42 to +0.35 °C per year, close to the temperature term's
+      +0.34: a gain from January takes out much of the seasonal pattern the
+      whole year's temperature term does. With it, 23 of the 40 sensors
+      drift significantly, against 24 without.
+    evidence:
+      - artifact: calibration_comparison
+        quote: { exact: '"median_abs_drift_change_c_per_year": 0.1345' }
+      - artifact: calibration_comparison
+        quote: { exact: '"max_abs_drift_change_c_per_year": 0.4282' }
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_of_max": "s23"' }
+      - artifact: calibration_comparison
+        quote: { exact: '"max_abs_drift_change_in_baseline_se": 1.759' }
+      - artifact: calibration_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.3472' }
+      - artifact: universe_comparison
+        quote: { exact: '"median_drift_c_per_year": 0.3357' }
+      - artifact: calibration_comparison
+        quote: { exact: '"n_sensors_ci95_excluding_zero": 23' }
+
+  calibration_window:
+    claim: >-
+      Two weeks is too short to calibrate a gain, and a month is enough. The
+      sensors' gains are known to a median standard error of 0.024 from two
+      weeks, 0.011 from a month and 0.009 from three; carried into the
+      drift, the two-week gain's uncertainty adds a median 0.14 °C per year
+      to its error and widens it by a fifth, the month's 0.07. Three months
+      move the drifts much as one does, by a median of 0.13 °C per year.
+    evidence:
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_gain_median_se": 0.0236' }
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_gain_median_se": 0.0107' }
+      - artifact: calibration_comparison
+        quote: { exact: '"sensor_gain_median_se": 0.0086' }
+      - artifact: calibration_comparison
+        quote: { exact: '"median_drift_se_calibration_c_per_year": 0.142' }
+      - artifact: calibration_comparison
+        quote: { exact: '"median_se_ratio_to_baseline": 1.209' }
+      - artifact: calibration_comparison
+        quote: { exact: '"median_drift_se_calibration_c_per_year": 0.0654' }
+      - artifact: calibration_comparison
+        quote: { exact: '"median_abs_drift_change_c_per_year": 0.1267' }

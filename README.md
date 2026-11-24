@@ -8,6 +8,12 @@ network.
   (linear in time) and `results/temperature_term/drift.csv` (linear in time
   plus a temperature-dependent bias). The intervals add the scatter of each
   sensor's residuals to what its own noise model gives.
+- The same with each sensor first calibrated against FRPDAS over the start
+  of its record, `results/gain_<window>/drift.csv` (a gain and an offset)
+  and `results/offset_<window>/drift.csv` (an offset alone), for windows of
+  two weeks, one month and three months; what that changes,
+  `results/calibration_comparison.json`. The calibration is an analysis of
+  its own, in [`calibration/`](calibration/README.md), which this one drives.
 - Method, checks and caveats: [`index.md`](index.md). Specification:
   `astra.yaml`.
 
