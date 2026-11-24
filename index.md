@@ -76,14 +76,44 @@ on simulated residuals as persistent as these, their 95% intervals covered
 the true trend only 80–90% of the time, against 92–95% for the AR(1)
 adjustment. `tests/test_drift_stats.py` repeats that comparison.
 
+**Uncertainties from what is known about the sensors.**
+[noise-models](https://github.com/tomcharnock-lightcone/noise-models)
+measured each sensor's noise in a climate chamber: a white floor plus a 1/f
+part, given by its power spectral density (the Hann-window models, read at
+the commit `astra.yaml` declares as `analyses.noise`). A fitted drift is a
+weighted sum of daily means, so its variance under that noise is an integral
+of the spectrum through the daily-mean filter and the fit's weights
+(`src/noise_propagation.py`; `tests/test_noise_propagation.py` checks it
+against the textbook white-noise case and against fits to simulated years of
+1/f noise). The 1/f part matters here: it keeps wandering over months, which
+an AR(1) model of the residuals, with its short memory, does not capture.
+
+This is the sensor's own noise only. The residuals also carry the two sites
+answering the weather differently, and the reference's noise, which the
+noise model knows nothing of. Comparing the day-to-day change the noise model
+predicts with the residuals' own (`noise_day_step_sd_c` and
+`observed_day_step_sd_c` in `drift.csv`) gives the share of the daily
+scatter the sensor's noise explains. And the noise model reaches a year only
+by extending a week-long chamber run, at about 20 °C, some three decades
+below its lowest fitted frequency; noise-models itself warns that its models
+say nothing beyond a week or at other temperatures.
+
+Since neither error is complete, every `drift.csv` carries both
+(`drift_se_residual_c_per_year`, `drift_se_noise_model_c_per_year`), and the
+decision `drift_errors` picks the one the quoted error and interval use: the
+residuals', the noise model's, or both variances added (`combined`, which
+counts the sensor's day-to-day noise twice and so errs wide).
+
 **Decisions, each built in its own universe:**
 
-| Universe | Reference days | Sensor-day coverage | Drift model |
-|---|---|---|---|
-| `baseline` | measured only | ≥ 99% | linear in time |
-| `temperature_term` | measured only | ≥ 99% | + temperature-dependent bias |
-| `gap_filled_reference` | gap-filled too | ≥ 99% | linear in time |
-| `coverage_90` | measured only | ≥ 90% | linear in time |
+| Universe | Reference days | Sensor-day coverage | Drift model | Drift errors |
+|---|---|---|---|---|
+| `baseline` | measured only | ≥ 99% | linear in time | residuals |
+| `temperature_term` | measured only | ≥ 99% | + temperature-dependent bias | residuals |
+| `gap_filled_reference` | gap-filled too | ≥ 99% | linear in time | residuals |
+| `coverage_90` | measured only | ≥ 90% | linear in time | residuals |
+| `noise_model_errors` | measured only | ≥ 99% | linear in time | noise model |
+| `combined_errors` | measured only | ≥ 99% | linear in time | both added |
 
 The temperature term is there because a sensor whose bias depends on
 temperature (a gain error, or a radiation shield that lets warm, sunny days
