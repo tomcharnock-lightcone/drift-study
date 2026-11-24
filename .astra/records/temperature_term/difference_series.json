@@ -1,0 +1,30 @@
+{
+  "address": "difference_series#temperature_term",
+  "content_hash": "sha256:0a3d04c3a1ca547b46a9229db8e6ff86012fd4bd1f2dcaf4f6606089698b3e2d",
+  "generated_by": {
+    "commit": "5aafb4b64f724ff6f3fbbee6bf08e870cdc0b627",
+    "environment": {
+      "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
+    },
+    "finished": "2026-11-24T10:09:44.383Z",
+    "inputs": [
+      {
+        "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
+        "entry": "differences",
+        "size": 913390
+      },
+      {
+        "content_hash": "sha256:98ce5b2bdd8b6dac61a650b6368715c0df9c134f02d46612e0f4fe5860cbc448",
+        "entry": "drift",
+        "size": 6588
+      }
+    ],
+    "runner": {
+      "id": "lightcone-cli",
+      "version": "0.6.0rc2"
+    },
+    "started": "2026-11-24T10:09:36.392Z"
+  },
+  "size": 907573,
+  "spec_version": "0.1.0"
+}
