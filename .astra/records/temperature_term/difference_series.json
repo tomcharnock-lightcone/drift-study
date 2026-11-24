@@ -1,12 +1,12 @@
 {
   "address": "difference_series#temperature_term",
-  "content_hash": "sha256:a11e423ae9daf2de10b96a7b3c107fdb1524a776e61f19af61cd546d60399881",
+  "content_hash": "sha256:176324c9127f4a8dc0d8e7a10355cf5edd19e274d2efd134523dc1cbb1e7511c",
   "generated_by": {
-    "commit": "af130be0aef32921d73c3267356192e3f904ebdc",
+    "commit": "6320f29d9807fc73aa25f06743044a2c699715ca",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T12:56:14.896Z",
+    "finished": "2026-11-24T16:00:06.903Z",
     "inputs": [
       {
         "content_hash": "sha256:037088c858cf91c41c19945632d7156051057c7c58cfef6a52aa95d0a77159fd",
@@ -14,17 +14,17 @@
         "size": 913390
       },
       {
-        "content_hash": "sha256:ca0d4cd402b66fd32acd30f2f0d3253fe69ea4e6660a017a09db1fe56356f54d",
+        "content_hash": "sha256:34717e67d99a856f82c8ed6e7956f6b428afdc6f972fbe9eaad19cf9ea85c3de",
         "entry": "drift",
-        "size": 8165
+        "size": 8153
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T12:56:05.766Z"
+    "started": "2026-11-24T15:59:55.902Z"
   },
-  "size": 909933,
+  "size": 909871,
   "spec_version": "0.1.0"
 }
