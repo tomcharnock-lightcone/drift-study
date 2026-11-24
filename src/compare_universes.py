@@ -21,6 +21,24 @@ def excluding_zero(t: pd.DataFrame) -> int:
     return int(((t["drift_ci95_low_c_per_year"] > 0) | (t["drift_ci95_high_c_per_year"] < 0)).sum())
 
 
+def changes(base: pd.DataFrame, alt: pd.DataFrame, name: str) -> dict:
+    """How far one alternative's drift table, indexed by sensor, moves from the baseline's."""
+    if not alt.index.equals(base.index):
+        raise ValueError(f"{name} does not list the baseline's sensors")
+    size = (alt["drift_c_per_year"] - base["drift_c_per_year"]).abs()
+    return {
+        "max_abs_drift_change_c_per_year": round(float(size.max()), 4),
+        "sensor_of_max": size.idxmax(),
+        "median_abs_drift_change_c_per_year": round(float(size.median()), 4),
+        "max_abs_drift_change_in_baseline_se": round(
+            float((size / base["drift_se_c_per_year"]).max()), 3),
+        "median_drift_c_per_year": round(float(alt["drift_c_per_year"].median()), 4),
+        "median_se_ratio_to_baseline": round(
+            float((alt["drift_se_c_per_year"] / base["drift_se_c_per_year"]).median()), 3),
+        "n_sensors_ci95_excluding_zero": excluding_zero(alt),
+    }
+
+
 def main(baseline: str, *rest: str) -> None:
     *pairs, out = rest
     base = pd.read_csv(baseline).set_index("sensor")
@@ -33,22 +51,7 @@ def main(baseline: str, *rest: str) -> None:
     }
     for pair in pairs:
         name, path = pair.split("=", 1)
-        alt = pd.read_csv(path).set_index("sensor")
-        if not alt.index.equals(base.index):
-            raise ValueError(f"{name} does not list the baseline's sensors")
-        change = alt["drift_c_per_year"] - base["drift_c_per_year"]
-        size = change.abs()
-        report[name] = {
-            "max_abs_drift_change_c_per_year": round(float(size.max()), 4),
-            "sensor_of_max": size.idxmax(),
-            "median_abs_drift_change_c_per_year": round(float(size.median()), 4),
-            "max_abs_drift_change_in_baseline_se": round(
-                float((size / base["drift_se_c_per_year"]).max()), 3),
-            "median_drift_c_per_year": round(float(alt["drift_c_per_year"].median()), 4),
-            "median_se_ratio_to_baseline": round(
-                float((alt["drift_se_c_per_year"] / base["drift_se_c_per_year"]).median()), 3),
-            "n_sensors_ci95_excluding_zero": excluding_zero(alt),
-        }
+        report[name] = changes(base, pd.read_csv(path).set_index("sensor"), name)
     with open(out, "w") as fh:
         json.dump(report, fh, indent=2)
         fh.write("\n")

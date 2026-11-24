@@ -27,6 +27,17 @@ DRIFT_ERRORS (the decision of that name) picks the one the quoted error and
   both, so this errs wide.
 
 The offset's and temperature coefficient's errors are always residual_ar1.
+
+DIFFERENCES can be calibration/src/apply_calibration.py's table instead,
+each sensor's readings calibrated, s' = (s − o)/g. Then the drift carries
+the gain's uncertainty too: the slope of the calibrated difference is
+b' = Σ w_j (s_j − o)/g − Σ w_j r_j, with w the slope's weights, so
+∂b'/∂g = −Σ w_j (s_j − o)/g² (the offset drops out, as Σ w_j = 0), and
+drift_se_calibration_c_per_year = |Σ w_j (s_j − o)|/g² · σ_g is added in
+quadrature to the quoted error and interval, whichever DRIFT_ERRORS picks.
+The noise model's error is divided by g, as the noise in a calibrated
+reading is. The table also gives each sensor's calibration_gain and
+calibration_gain_se.
 """
 
 from __future__ import annotations
@@ -86,11 +97,16 @@ def fit_sensor(days: pd.DataFrame, model: str) -> dict:
     }
 
 
+def slope_weights(X: np.ndarray) -> np.ndarray:
+    """w with b = Σ w_j d_j: the slope's row of the least-squares solution."""
+    return np.linalg.solve(X.T @ X, X.T)[1]
+
+
 def noise_columns(row: dict, noise: pd.Series) -> dict:
     """The drift's error from the sensor's noise model, and how much of the
     residuals' day-to-day scatter that noise explains."""
     X, day, e = row["_X"], row["_day"], row["_residuals"]
-    w = np.linalg.solve(X.T @ X, X.T)[1]
+    w = slope_weights(X)
     args = (noise["sigma_white_c"], noise["f_knee_hz"], noise["alpha"], noise["fs_hz"])
     order = np.argsort(day)
     consecutive = np.diff(day[order]) == 1
@@ -98,6 +114,20 @@ def noise_columns(row: dict, noise: pd.Series) -> dict:
         "drift_se_noise_model_c_per_year": np.sqrt(weighted_daily_mean_var(w, day, *args)),
         "noise_day_step_sd_c": np.sqrt(day_step_var(*args)),
         "observed_day_step_sd_c": float(np.std(np.diff(e[order])[consecutive], ddof=1)),
+    }
+
+
+def calibration_columns(row: dict, used: pd.DataFrame) -> dict:
+    """For calibrated readings: the drift's error from the calibration's gain,
+    and the noise model's error scaled to calibrated readings."""
+    g, g_se, o = (float(used[c].iloc[0]) for c in ("gain", "gain_se", "offset_c"))
+    s = slope_weights(row["_X"]) @ (used["raw_sensor_mean_c"].to_numpy() - o)
+    return {
+        "drift_se_noise_model_c_per_year": row["drift_se_noise_model_c_per_year"] / g,
+        "noise_day_step_sd_c": row["noise_day_step_sd_c"] / g,
+        "calibration_gain": g,
+        "calibration_gain_se": g_se,
+        "drift_se_calibration_c_per_year": abs(s) / g**2 * g_se,
     }
 
 
@@ -112,6 +142,9 @@ def choose_errors(row: dict, errors: str) -> None:
     else:
         se = np.hypot(res, nm)
         half = np.hypot(row["_ci95_half_residual"], 1.96 * nm)
+    if "drift_se_calibration_c_per_year" in row:
+        cal = row["drift_se_calibration_c_per_year"]
+        se, half = np.hypot(se, cal), np.hypot(half, 1.96 * cal)
     row["drift_se_c_per_year"] = se
     row["drift_ci95_low_c_per_year"] = b - half
     row["drift_ci95_high_c_per_year"] = b + half
@@ -125,12 +158,16 @@ def main(differences: str, model: str, errors: str, noise_models: str, out: str)
     table = pd.read_csv(differences, keep_default_na=False, na_values=[""])
     table["excluded_reason"] = table["excluded_reason"].fillna("")
     noise = pd.read_csv(noise_models).set_index("sensor")
+    calibrated = "gain" in table.columns
     rows = []
     for sensor, days in table.groupby("sensor", sort=True):
         if sensor not in noise.index:
             raise SystemExit(f"no noise model for {sensor} in {noise_models}")
-        row = {"sensor": sensor, **fit_sensor(days[days["used"]], model)}
+        used = days[days["used"]]
+        row = {"sensor": sensor, **fit_sensor(used, model)}
         row.update(noise_columns(row, noise.loc[sensor]))
+        if calibrated:
+            row.update(calibration_columns(row, used))
         choose_errors(row, errors)
         counts = days["excluded_reason"].value_counts()
         for reason in REASONS:

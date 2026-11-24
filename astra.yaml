@@ -12,7 +12,9 @@ description: >-
   against its published MD5; only the daily means it gives are kept. Whether
   FRPDAS itself is stable, and how much apparent drift two maintained stations
   show against each other over one year, is checked against the rest of the
-  Freiburg network.
+  Freiburg network. Whether calibrating each sensor against FRPDAS over an
+  initial window, with an offset or a gain and an offset, changes the drift
+  is checked with the calibration analysis in calibration/.
 
 analyses:
   archive:
@@ -21,6 +23,8 @@ analyses:
   noise:
     url: https://github.com/tomcharnock-lightcone/noise-models
     commit: 6402027ef2b830d6caab22e9a1f03811d0c1871a
+  calibration:
+    path: calibration
 
 decisions:
   reference_hours:
@@ -120,6 +124,28 @@ decisions:
           quadrature. The instrument's day-to-day noise is counted in both,
           so this errs wide.
 
+  calibrate:
+    label: Calibration before the fit
+    rationale: >-
+      A drift is what changes in a sensor after it was set up. Calibrating
+      each sensor against the reference over the start of its record
+      removes what it read wrong from the start, so that the fit sees only
+      what came later. An offset cannot change a drift fitted with an
+      offset of its own; a gain can, by taking the seasonal cycle it causes
+      out of the difference. The calibration's window and model are the
+      calibration analysis's decisions, selected where this one is
+      initial_window.
+    options:
+      none:
+        label: None
+        description: The sensors' daily means as the archive gives them.
+      initial_window:
+        label: Over an initial window
+        description: >-
+          Each sensor's daily means calibrated against FRPDAS over the start
+          of its record (calibration analysis), with the gain's uncertainty
+          carried into the drift's.
+
 outputs:
   reference_daily:
     label: Freiburg stations' daily means, 2023
@@ -161,6 +187,17 @@ outputs:
         {inputs.reference_daily} FRPDAS {decisions.reference_hours}
         {decisions.min_coverage} {output}
 
+  fit_input:
+    switch: calibrate
+    cases:
+      none: differences
+      initial_window: calibration.calibrated
+
+  calibration_coefficients:
+    switch: calibrate
+    cases:
+      initial_window: calibration.coefficients
+
   drift:
     label: Linear drift per sensor
     type: table
@@ -182,17 +219,22 @@ outputs:
       their 95% intervals covered the true trend 80–90% of the time,
       tests/test_drift_stats.py); and drift_se_noise_model_c_per_year, from
       the sensor's noise model (src/noise_propagation.py). drift_errors picks
-      which the quoted drift_se_c_per_year and interval use. Beside them,
+      which the quoted drift_se_c_per_year and interval use. Fitted to
+      calibrated readings, the table adds calibration_gain,
+      calibration_gain_se and drift_se_calibration_c_per_year, how far the
+      gain's uncertainty moves the drift, which is added in quadrature to
+      the quoted error and interval; the noise model's error is then divided
+      by the gain, as the noise in a calibrated reading is. Beside them,
       noise_day_step_sd_c and observed_day_step_sd_c: the day-to-day change
       of the daily difference the noise model predicts, and that of the
       residuals, whose ratio is the share of the daily scatter the sensor's
       own noise explains. Offset and temperature-coefficient errors are
       always from the residuals.
-    inputs: [differences, noise.noise_models#hann]
+    inputs: [fit_input, noise.noise_models#hann]
     decisions: [drift_model, drift_errors]
     recipe:
       command: >-
-        python src/fit_drift.py {inputs.differences} {decisions.drift_model}
+        python src/fit_drift.py {inputs.fit_input} {decisions.drift_model}
         {decisions.drift_errors} {inputs.noise.noise_models#hann} {output}
 
   reference_check:
@@ -218,10 +260,11 @@ outputs:
     format: png
     description: >-
       One panel per sensor: the daily difference from FRPDAS (used days as
-      dots, excluded days as rings) and the fitted drift.
-    inputs: [differences, drift]
+      dots, excluded days as rings), calibrated where the universe
+      calibrates, and the fitted drift.
+    inputs: [fit_input, drift]
     recipe:
-      command: python src/plot_differences.py {inputs.differences} {inputs.drift} {output}
+      command: python src/plot_differences.py {inputs.fit_input} {inputs.drift} {output}
 
   drift_summary:
     label: Drift per sensor
@@ -288,17 +331,98 @@ outputs:
         noise_model_errors={inputs.drift#noise_model_errors}
         residual_errors={inputs.drift#residual_errors} {output}
 
+  calibration_comparison:
+    label: What calibrating changes
+    type: metric
+    format: json
+    description: >-
+      For each calibrated universe against the baseline: how far the drifts
+      move (as in universe_comparison), the median drift error the
+      calibration's gain adds, and the median ratio of the residuals'
+      scatter to the baseline's. For a gain, also the window, the spread of
+      the sensors' gains (median, 5th and 95th percentiles, standard
+      deviation, median error) and of the other Freiburg stations' against
+      FRPDAS over the same window, how many of each have a 95% interval
+      that excludes 1, and the correlation over the sensors of g − 1 from
+      the window with the temperature coefficient c fitted over the whole
+      year (drift#temperature_term).
+    inputs:
+      - drift#baseline
+      - drift#temperature_term
+      - drift#offset_two_weeks
+      - drift#offset_one_month
+      - drift#offset_three_months
+      - drift#gain_two_weeks
+      - calibration_coefficients#gain_two_weeks
+      - drift#gain_one_month
+      - calibration_coefficients#gain_one_month
+      - drift#gain_three_months
+      - calibration_coefficients#gain_three_months
+    recipe:
+      command: >-
+        python src/compare_calibration.py {inputs.drift#baseline}
+        {inputs.drift#temperature_term}
+        offset_two_weeks={inputs.drift#offset_two_weeks}
+        offset_one_month={inputs.drift#offset_one_month}
+        offset_three_months={inputs.drift#offset_three_months}
+        gain_two_weeks={inputs.drift#gain_two_weeks},{inputs.calibration_coefficients#gain_two_weeks}
+        gain_one_month={inputs.drift#gain_one_month},{inputs.calibration_coefficients#gain_one_month}
+        gain_three_months={inputs.drift#gain_three_months},{inputs.calibration_coefficients#gain_three_months}
+        {output}
+
+  calibration_gains:
+    label: Calibration gain per sensor
+    type: figure
+    format: png
+    description: >-
+      Each sensor's gain against FRPDAS with its 95% interval, one panel per
+      window, over the 5th–95th percentile band of the other Freiburg
+      stations' gains over the same window.
+    inputs:
+      - calibration_coefficients#gain_two_weeks
+      - calibration_coefficients#gain_one_month
+      - calibration_coefficients#gain_three_months
+    recipe:
+      command: >-
+        python src/plot_gains.py
+        two_weeks={inputs.calibration_coefficients#gain_two_weeks}
+        one_month={inputs.calibration_coefficients#gain_one_month}
+        three_months={inputs.calibration_coefficients#gain_three_months}
+        {output}
+
+  calibration_drift:
+    label: Drift with and without a gain calibration
+    type: figure
+    format: png
+    description: >-
+      Each sensor's drift and 95% interval uncalibrated (baseline) and
+      calibrated with a gain and an offset, one panel per window.
+    inputs:
+      - drift#baseline
+      - drift#gain_two_weeks
+      - drift#gain_one_month
+      - drift#gain_three_months
+    recipe:
+      command: >-
+        python src/plot_calibration_drift.py {inputs.drift#baseline}
+        two_weeks={inputs.drift#gain_two_weeks}
+        one_month={inputs.drift#gain_one_month}
+        three_months={inputs.drift#gain_three_months}
+        {output}
+
 universes:
   baseline:
     label: Baseline
     description: >-
       Measured reference days, sensor-days at least 99% covered, drift linear
-      in time, drift errors from the residuals and the noise models together.
+      in time, drift errors from the residuals and the noise models together,
+      no calibration.
     decisions:
       reference_hours: measured
       min_coverage: p99
       drift_model: time_only
       drift_errors: combined
+      calibrate: none
   temperature_term:
     label: With a temperature-dependent bias
     derived_from: baseline
@@ -324,6 +448,48 @@ universes:
     derived_from: baseline
     decisions:
       drift_errors: residual_ar1
+  offset_two_weeks:
+    label: Calibrated over two weeks, offset only
+    derived_from: baseline
+    decisions:
+      calibrate: initial_window
+      calibration.window: two_weeks
+      calibration.model: offset_only
+  offset_one_month:
+    label: Calibrated over one month, offset only
+    derived_from: baseline
+    decisions:
+      calibrate: initial_window
+      calibration.window: one_month
+      calibration.model: offset_only
+  offset_three_months:
+    label: Calibrated over three months, offset only
+    derived_from: baseline
+    decisions:
+      calibrate: initial_window
+      calibration.window: three_months
+      calibration.model: offset_only
+  gain_two_weeks:
+    label: Calibrated over two weeks, gain and offset
+    derived_from: baseline
+    decisions:
+      calibrate: initial_window
+      calibration.window: two_weeks
+      calibration.model: gain_and_offset
+  gain_one_month:
+    label: Calibrated over one month, gain and offset
+    derived_from: baseline
+    decisions:
+      calibrate: initial_window
+      calibration.window: one_month
+      calibration.model: gain_and_offset
+  gain_three_months:
+    label: Calibrated over three months, gain and offset
+    derived_from: baseline
+    decisions:
+      calibrate: initial_window
+      calibration.window: three_months
+      calibration.model: gain_and_offset
 
 findings:
   sensors_drift_upward:
