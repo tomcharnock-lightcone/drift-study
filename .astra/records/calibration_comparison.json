@@ -1,74 +1,74 @@
 {
   "address": "calibration_comparison",
-  "content_hash": "sha256:e9ef083f6d7a0441c534eb3f686f9a224f1d796e4539d7d5f0ec61d7f25679f8",
+  "content_hash": "sha256:284c2fe312e62aea676f70cafb473243a01ec934f1473ff95f45be4fac313db7",
   "generated_by": {
-    "commit": "af130be0aef32921d73c3267356192e3f904ebdc",
+    "commit": "6320f29d9807fc73aa25f06743044a2c699715ca",
     "environment": {
       "iri": "urn:lightcone:env:sha256:3148262caa0b5d6c09ed90a061907c6fbaaff83716442ace7d165e0fa4463808"
     },
-    "finished": "2026-11-24T12:56:30.382Z",
+    "finished": "2026-11-24T16:00:20.652Z",
     "inputs": [
       {
-        "content_hash": "sha256:ebf660532c56f821cd2a682cd5d2e84c6a518d89688faafb61bc81682c8dfa70",
+        "content_hash": "sha256:f882d7f8026330a16cd196ecc5a71db20a9458d5b269b96b49d8a9038705c87c",
         "entry": "drift#baseline",
-        "size": 7317
+        "size": 7320
       },
       {
-        "content_hash": "sha256:ca0d4cd402b66fd32acd30f2f0d3253fe69ea4e6660a017a09db1fe56356f54d",
+        "content_hash": "sha256:34717e67d99a856f82c8ed6e7956f6b428afdc6f972fbe9eaad19cf9ea85c3de",
         "entry": "drift#temperature_term",
-        "size": 8165
+        "size": 8153
       },
       {
-        "content_hash": "sha256:20a278da5253453b38d9c0437414fd272fa8a24de7933871e4acd58768b731b4",
+        "content_hash": "sha256:33f682b688b1ba699126320c8ab604aa49a6342ff3f622b2e1abef2b173a89b0",
         "entry": "drift#offset_two_weeks",
-        "size": 7624
+        "size": 7627
       },
       {
-        "content_hash": "sha256:dd95ab5fc89e7dd587a25ee64d1e27ebb82bf7606359c664f260c212c063074c",
+        "content_hash": "sha256:10c786907c7fcd1acac3d943e2573f9f027df110391ee65849042b5a5c6e7092",
         "entry": "drift#offset_one_month",
-        "size": 7624
+        "size": 7627
       },
       {
-        "content_hash": "sha256:06371b3c4dfe3dff8aae04f6ece63e12f95283807fdc69334cdd6f271ec41b79",
+        "content_hash": "sha256:432aab140eff361f67983ea8b0a6b4c091d5b8518f461a1497e0a876b88dbdea",
         "entry": "drift#offset_three_months",
-        "size": 7630
+        "size": 7633
       },
       {
-        "content_hash": "sha256:8b6450ab329e33330c07bd1e66e62efef2fa76272f617645a98f254bd0c9e2bc",
+        "content_hash": "sha256:44ae61dfe86ec0ab01547a6466d3b5a7493c0f3dd1ac88fd491d901f4e712c61",
         "entry": "drift#gain_two_weeks",
-        "size": 8460
+        "size": 8446
       },
       {
-        "content_hash": "sha256:c9587c217168922b0ed37f146b2245bb2073374a8b9948c85ac06e690d3737c7",
+        "content_hash": "sha256:f25a527dc02e79c8d1482ffea98cb475f836eeaacb15d53e9da4a2409b4c5ce2",
         "entry": "calibration_coefficients#gain_two_weeks",
-        "size": 14084
+        "size": 14076
       },
       {
-        "content_hash": "sha256:dd342cb2c7520904fa7c49df4fa3f4f172db5250510d92c1f74cb9ce7ab4c4b2",
+        "content_hash": "sha256:524ac03dde5a3d5b374bd89b84e449ed20e081dc0ebc703a4a70bba57adf98e3",
         "entry": "drift#gain_one_month",
-        "size": 8495
+        "size": 8508
       },
       {
-        "content_hash": "sha256:bfa721d6cba34c9148d92faf947f0e52f16b14706b0cad82b0bb515a41590d72",
+        "content_hash": "sha256:c5cf607d7d7f296a0f59efd6953c634493f0bfb2ee91fec1465646a0cdffcb86",
         "entry": "calibration_coefficients#gain_one_month",
-        "size": 14313
+        "size": 14309
       },
       {
-        "content_hash": "sha256:cdae0dccd39e17da42e32d4365a0a68e9ddb6d32a6b1b89e72ce73560d8c63c9",
+        "content_hash": "sha256:d868418ff42ce253f0c5d0c107847c4f96c13c4f75025c2259e5e63ea26aa088",
         "entry": "drift#gain_three_months",
-        "size": 8510
+        "size": 8512
       },
       {
-        "content_hash": "sha256:f93a9e3c2e6f0f0b1aa471f27aed910768b4564d383df0369eadfb086f737d9d",
+        "content_hash": "sha256:a5f936ab5627ca9d0f50f9490d6354d59929e637f17e91a9652146966ae11113",
         "entry": "calibration_coefficients#gain_three_months",
-        "size": 14536
+        "size": 14542
       }
     ],
     "runner": {
       "id": "lightcone-cli",
       "version": "0.6.0rc2"
     },
-    "started": "2026-11-24T12:56:29.743Z"
+    "started": "2026-11-24T16:00:20.090Z"
   },
   "size": 4471,
   "spec_version": "0.1.0"
